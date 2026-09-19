@@ -1,32 +1,60 @@
 const Document = require("../models/Document");
 const fs = require("fs");
 const path = require("path");
+const {
+    extractTextFromFile,
+    splitTextIntoChunks,
+} = require("../services/documentService");
 // Create a document
 // Create a document
 const createDocument = async (req, res) => {
-  try {
-    const documentData = {
-      name: req.body.name,
-      description: req.body.description || "",
-      eventId: req.body.eventId || undefined,
-      uploadedBy: req.body.uploadedBy || "",
-      fileType: req.file ? req.file.mimetype : "",
-      fileUrl: req.file ? `/uploads/${req.file.filename}` : "",
-    };
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Please upload a file",
+            });
+        }
 
-    const document = await Document.create(documentData);
+        // File location
+        const filePath = req.file.path;
 
-    res.status(201).json({
-      success: true,
-      message: "Document uploaded successfully",
-      data: document,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
+        // Extract text
+        const content = await extractTextFromFile(
+            filePath,
+            req.file.mimetype
+        );
+
+        // Split text into chunks
+        const chunks = splitTextIntoChunks(content);
+
+        const documentData = {
+            name: req.body.name || req.file.originalname,
+            description: req.body.description || "",
+            eventId: req.body.eventId || undefined,
+            uploadedBy: req.body.uploadedBy || "",
+            fileType: req.file.mimetype,
+            fileUrl: `/uploads/${req.file.filename}`,
+            content,
+            chunks,
+        };
+
+        const document = await Document.create(documentData);
+
+        res.status(201).json({
+            success: true,
+            message: "Document uploaded and processed successfully",
+            data: document,
+        });
+
+    } catch (error) {
+        console.error("Document processing error:", error);
+
+        res.status(400).json({
+            success: false,
+            message: error.message,
+        });
+    }
 };
 
 // Get all documents

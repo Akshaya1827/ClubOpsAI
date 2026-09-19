@@ -32,6 +32,17 @@ const documentSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+     content: {
+      type: String,
+      default: "",
+    },
+
+    // Text chunks that will later be used by RAG
+    chunks: {
+      type: [String],
+      default: [],
+    },
+    
   },
   {
     timestamps: true,
