@@ -5,8 +5,10 @@ import Deadlines from "./pages/Deadlines";
 import Volunteers from "./pages/Volunteers";
 import Documents from "./pages/Documents";
 import Meetings from "./pages/Meetings";
+import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
 import "./App.css";
+
 
 function App() {
   const [activePage, setActivePage] = useState("events");
@@ -58,6 +60,9 @@ function App() {
 
       case "meetings":
         return <Meetings />;
+
+      case "announcements":
+        return <Announcements />;
 
       default:
         return <Events />;
@@ -148,6 +153,13 @@ function App() {
           >
             Meetings
           </button>
+
+          <button
+          className={activePage === "announcements" ? "active" : ""}
+           onClick={() => setActivePage("announcements")}
+          >
+         Announcements
+      </button>
 
           <div className="user-section">
             <span className="user-name">

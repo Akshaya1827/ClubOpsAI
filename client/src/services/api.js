@@ -415,3 +415,110 @@ export const deleteMeeting = async (meetingId) => {
 
   return data;
 };
+
+// ==================== ANNOUNCEMENTS ====================
+
+export const getAnnouncements = async () => {
+  const response = await fetch(`${API_BASE_URL}/announcements`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch announcements");
+  }
+
+  return data;
+};
+
+export const createAnnouncement = async (announcementData) => {
+  const response = await fetch(`${API_BASE_URL}/announcements`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(announcementData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to create announcement");
+  }
+
+  return data;
+};
+
+export const updateAnnouncement = async (
+  announcementId,
+  announcementData
+) => {
+  const response = await fetch(
+    `${API_BASE_URL}/announcements/${announcementId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(announcementData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update announcement");
+  }
+
+  return data;
+};
+
+export const deleteAnnouncement = async (announcementId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/announcements/${announcementId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete announcement");
+  }
+
+  return data;
+};
+
+export const publishAnnouncement = async (announcementId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/announcements/${announcementId}/publish`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to publish announcement");
+  }
+
+  return data;
+};
+
+export const unpublishAnnouncement = async (announcementId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/announcements/${announcementId}/unpublish`,
+    {
+      method: "PATCH",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to unpublish announcement");
+  }
+
+  return data;
+};
