@@ -1,5 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
+const eventRoutes = require("./routes/eventRoutes");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const dns = require("dns");
@@ -13,6 +14,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.use("/api/events", eventRoutes);
 
 app.get("/", (req, res) => {
     res.json({
