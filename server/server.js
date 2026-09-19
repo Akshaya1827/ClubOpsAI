@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db");
 const dns = require("dns");
 const volunteerRoutes = require("./routes/volunteerRoutes");
+const meetingRoutes = require("./routes/meetingRoutes");
 dns.setServers(["8.8.8.8"]);
 dotenv.config();
 
@@ -14,6 +15,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/volunteers", volunteerRoutes);
+app.use("/api/meetings", meetingRoutes);
 app.get("/", (req, res) => {
     res.json({
         message: "ClubOps AI backend is running"
