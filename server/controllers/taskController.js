@@ -86,6 +86,91 @@ const getTaskById = async (req, res) => {
   }
 };
 
+// Get upcoming deadlines
+const getUpcomingDeadlines = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const tasks = await Task.find({
+      dueDate: { $gte: now },
+      status: { $ne: "completed" },
+    })
+      .populate("event", "title date")
+      .sort({ dueDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      tasks,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch upcoming deadlines",
+      error: error.message,
+    });
+  }
+};
+
+// Get overdue deadlines
+const getOverdueDeadlines = async (req, res) => {
+  try {
+    const now = new Date();
+
+    const tasks = await Task.find({
+      dueDate: { $lt: now },
+      status: { $ne: "completed" },
+    })
+      .populate("event", "title date")
+      .sort({ dueDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      tasks,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch overdue deadlines",
+      error: error.message,
+    });
+  }
+};
+
+// Get tasks due today
+const getTodayDeadlines = async (req, res) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const tasks = await Task.find({
+      dueDate: {
+        $gte: startOfDay,
+        $lte: endOfDay,
+      },
+      status: { $ne: "completed" },
+    })
+      .populate("event", "title date")
+      .sort({ dueDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      count: tasks.length,
+      tasks,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch today's deadlines",
+      error: error.message,
+    });
+  }
+};
+
 // Update a task
 const updateTask = async (req, res) => {
   try {
@@ -167,6 +252,9 @@ module.exports = {
   createTask,
   getTasks,
   getTaskById,
+  getUpcomingDeadlines,
+  getOverdueDeadlines,
+  getTodayDeadlines,
   updateTask,
   deleteTask,
 };
