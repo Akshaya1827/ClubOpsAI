@@ -203,3 +203,73 @@ export const getTodayDeadlines = async () => {
 
   return response.json();
 };
+
+// ==================== VOLUNTEERS ====================
+
+export const getVolunteers = async () => {
+  const response = await fetch(`${API_BASE_URL}/volunteers`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch volunteers");
+  }
+
+  return data;
+};
+
+export const createVolunteer = async (volunteerData) => {
+  const response = await fetch(`${API_BASE_URL}/volunteers`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(volunteerData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to create volunteer");
+  }
+
+  return data;
+};
+
+export const updateVolunteer = async (volunteerId, volunteerData) => {
+  const response = await fetch(
+    `${API_BASE_URL}/volunteers/${volunteerId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(volunteerData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update volunteer");
+  }
+
+  return data;
+};
+
+export const deleteVolunteer = async (volunteerId) => {
+  const response = await fetch(
+    `${API_BASE_URL}/volunteers/${volunteerId}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete volunteer");
+  }
+
+  return data;
+};

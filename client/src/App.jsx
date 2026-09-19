@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Events from "./pages/Events";
 import Tasks from "./pages/Tasks";
 import Deadlines from "./pages/Deadlines";
+import Volunteers from "./pages/Volunteers";
 import Auth from "./pages/Auth";
 import "./App.css";
 
@@ -46,6 +47,9 @@ function App() {
 
       case "deadlines":
         return <Deadlines />;
+
+      case "volunteers":
+        return <Volunteers />;
 
       default:
         return <Events />;
@@ -99,6 +103,18 @@ function App() {
             onClick={() => setActivePage("deadlines")}
           >
             Deadlines
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "volunteers"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("volunteers")}
+          >
+            Volunteers
           </button>
 
           <div className="user-section">
