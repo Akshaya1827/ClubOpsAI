@@ -351,3 +351,67 @@ export const deleteDocument = async (documentId) => {
 
   return data;
 };
+
+// ==================== MEETINGS ====================
+
+export const getMeetings = async () => {
+  const response = await fetch(`${API_BASE_URL}/meetings`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch meetings");
+  }
+
+  return data;
+};
+
+export const createMeeting = async (meetingData) => {
+  const response = await fetch(`${API_BASE_URL}/meetings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(meetingData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to create meeting");
+  }
+
+  return data;
+};
+
+export const updateMeeting = async (meetingId, meetingData) => {
+  const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(meetingData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update meeting");
+  }
+
+  return data;
+};
+
+export const deleteMeeting = async (meetingId) => {
+  const response = await fetch(`${API_BASE_URL}/meetings/${meetingId}`, {
+    method: "DELETE",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete meeting");
+  }
+
+  return data;
+};
