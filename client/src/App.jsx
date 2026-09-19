@@ -3,6 +3,7 @@ import Events from "./pages/Events";
 import Tasks from "./pages/Tasks";
 import Deadlines from "./pages/Deadlines";
 import Volunteers from "./pages/Volunteers";
+import Documents from "./pages/Documents";
 import Auth from "./pages/Auth";
 import "./App.css";
 
@@ -50,6 +51,9 @@ function App() {
 
       case "volunteers":
         return <Volunteers />;
+
+      case "documents":
+        return <Documents />;
 
       default:
         return <Events />;
@@ -115,6 +119,18 @@ function App() {
             onClick={() => setActivePage("volunteers")}
           >
             Volunteers
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "documents"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("documents")}
+          >
+            Documents
           </button>
 
           <div className="user-section">

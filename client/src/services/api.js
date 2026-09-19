@@ -273,3 +273,81 @@ export const deleteVolunteer = async (volunteerId) => {
 
   return data;
 };
+
+// ==================== DOCUMENTS ====================
+
+export const getDocuments = async () => {
+  const response = await fetch(`${API_BASE_URL}/documents`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch documents");
+  }
+
+  return data;
+};
+
+export const createDocument = async (documentData) => {
+  const formData = new FormData();
+
+  formData.append("name", documentData.name);
+  formData.append("description", documentData.description || "");
+
+  if (documentData.eventId) {
+    formData.append("eventId", documentData.eventId);
+  }
+
+  if (documentData.uploadedBy) {
+    formData.append("uploadedBy", documentData.uploadedBy);
+  }
+
+  if (documentData.file) {
+    formData.append("file", documentData.file);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to upload document");
+  }
+
+  return data;
+};
+
+export const updateDocument = async (documentId, documentData) => {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(documentData),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update document");
+  }
+
+  return data;
+};
+
+export const deleteDocument = async (documentId) => {
+  const response = await fetch(`${API_BASE_URL}/documents/${documentId}`, {
+    method: "DELETE",
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to delete document");
+  }
+
+  return data;
+};
