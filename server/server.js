@@ -3,7 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const dns = require("dns");
-
+dotenv.config();
 // Routes
 const authRoutes = require("./routes/authRoutes");
 const volunteerRoutes = require("./routes/volunteerRoutes");
@@ -12,9 +12,9 @@ const documentRoutes = require("./routes/documentRoutes");
 const announcementRoutes = require("./routes/announcementRoutes");
 const eventRoutes = require("./routes/eventRoutes");
 const taskRoutes = require("./routes/taskRoutes");
-
+const aiRoutes = require("./routes/aiRoutes");
 dns.setServers(["8.8.8.8"]);
-dotenv.config();
+
 
 connectDB();
 
@@ -31,7 +31,7 @@ app.use("/api/documents", documentRoutes);
 app.use("/api/announcements", announcementRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/tasks", taskRoutes);
-
+app.use("/api/ai", aiRoutes);
 // Static Files
 app.use("/uploads", express.static("uploads"));
 

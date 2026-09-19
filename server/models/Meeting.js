@@ -37,7 +37,36 @@ const meetingSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    summary: {
+  type: String,
+  default: "",
+},
 
+decisions: {
+  type: [String],
+  default: [],
+},
+actionItems: {
+  type: [
+    {
+      description: {
+        type: String,
+        required: true,
+      },
+
+      owner: {
+        type: String,
+        default: null,
+      },
+
+      deadline: {
+        type: Date,
+        default: null,
+      },
+    },
+  ],
+  default: [],
+},
     status: {
       type: String,
       enum: ["Scheduled", "Completed", "Cancelled"],
