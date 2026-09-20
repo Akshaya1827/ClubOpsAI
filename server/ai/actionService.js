@@ -605,6 +605,111 @@ const updateEvent = async (
 };
 
 // =========================================
+// CREATE TASKS FROM MEETING ACTION ITEMS
+// =========================================
+
+const createTasksFromActionItems = async (
+  actionItems = [],
+  eventId,
+  context = {}
+) => {
+  requireRole(
+    context,
+    ADMIN_COORDINATOR_ROLES
+  );
+
+  const event = await Event.findById(
+    eventId
+  );
+
+  if (!event) {
+    throw new Error(
+      "Event not found"
+    );
+  }
+
+  const createdTasks = [];
+
+  for (const item of actionItems) {
+    if (!item || !item.description) {
+      continue;
+    }
+
+    let assignedTo = null;
+
+    // Resolve the owner identified by Meeting AI.
+    if (item.owner) {
+      const user = await User.findOne({
+        name: {
+          $regex: `^${item.owner.trim()}$`,
+          $options: "i",
+        },
+      });
+
+      if (!user) {
+        console.warn(
+          `User not found for owner: ${item.owner}`
+        );
+      } else {
+        assignedTo = user._id;
+      }
+    }
+
+    // Task requires a deadline because
+    // the Task model requires dueDate.
+    if (!item.deadline) {
+      console.warn(
+        `Skipping task "${item.description}" because deadline is missing`
+      );
+      continue;
+    }
+
+    const parsedDeadline =
+      new Date(item.deadline);
+
+    if (
+      Number.isNaN(
+        parsedDeadline.getTime()
+      )
+    ) {
+      console.warn(
+        `Skipping task "${item.description}" because deadline is invalid`
+      );
+      continue;
+    }
+
+    // Prevent duplicate tasks.
+    const existingTask =
+      await Task.findOne({
+        title: item.description,
+        event: eventId,
+        dueDate: parsedDeadline,
+      });
+
+    if (existingTask) {
+      console.log(
+        `Task already exists: ${item.description}`
+      );
+      continue;
+    }
+
+    const task = await Task.create({
+      title: item.description,
+      description: item.description,
+      event: eventId,
+      assignedTo,
+      priority: "medium",
+      status: "todo",
+      dueDate: parsedDeadline,
+    });
+
+    createdTasks.push(task);
+  }
+
+  return createdTasks;
+};
+
+// =========================================
 // ACTION ROUTER
 // =========================================
 
@@ -656,6 +761,13 @@ const executeAction = async (
         context
       );
 
+    case "CREATE_TASKS_FROM_ACTION_ITEMS":
+      return createTasksFromActionItems(
+        args.actionItems || args,
+        args.eventId,
+        context
+      );
+
     default:
       throw new Error(
         `Unknown AI action: ${actionName}`
@@ -671,5 +783,6 @@ module.exports = {
   createAnnouncement,
   createMeeting,
   updateEvent,
+  createTasksFromActionItems,
   executeAction,
 };
