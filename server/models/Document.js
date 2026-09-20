@@ -32,17 +32,18 @@ const documentSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-     content: {
-      type: String,
-      default: "",
+    content: { type: String, default: "" },
+
+    chunks: {
+      type: [
+        {
+          text: { type: String, required: true },
+          embedding: { type: [Number], default: [] }
+        }
+      ],
+      default: []
     },
 
-    // Text chunks that will later be used by RAG
-    chunks: {
-      type: [String],
-      default: [],
-    },
-    
   },
   {
     timestamps: true,

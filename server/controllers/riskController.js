@@ -23,34 +23,43 @@ const detectEventRisks = async (req, res) => {
         );
 
         // 3. Save/update risks in MongoDB
-        const savedRisks = [];
+       const savedRisks = [];
 
-        for (const risk of risksWithAI) {
-            const savedRisk = await Risk.findOneAndUpdate(
-                {
-                    event: risk.event,
-                    task: risk.task,
-                    type: risk.type,
-                    status: "open"
-                },
-                {
-                    event: risk.event,
-                    task: risk.task,
-                    type: risk.type,
-                    title: risk.title,
-                    description: risk.description,
-                    severity: risk.severity,
-                    recommendation: risk.aiRecommendation,
-                    status: "open"
-                },
-                {
-                    new: true,
-                    upsert: true
-                }
-            );
+for (const risk of risksWithAI) {
+    const filter = {
+        event: risk.event,
+        type: risk.type,
+        status: "open"
+    };
 
-            savedRisks.push(savedRisk);
+    // Task-specific risks should also match the task
+    if (risk.task) {
+        filter.task = risk.task;
+    } else {
+        filter.task = null;
+    }
+
+    const savedRisk = await Risk.findOneAndUpdate(
+        filter,
+        {
+            event: risk.event,
+            task: risk.task || null,
+            type: risk.type,
+            title: risk.title,
+            description: risk.description,
+            severity: risk.severity,
+            recommendation: risk.aiRecommendation,
+            status: "open"
+        },
+        {
+            new: true,
+            upsert: true,
+            setDefaultsOnInsert: true
         }
+    );
+
+    savedRisks.push(savedRisk);
+}
 
         res.status(200).json({
             success: true,

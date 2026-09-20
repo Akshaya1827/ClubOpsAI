@@ -14,6 +14,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const taskRoutes = require("./routes/taskRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const riskRoutes = require("./routes/riskRoutes");
+const ragRoutes = require("./routes/ragRoutes");
 dns.setServers(["8.8.8.8"]);
 
 
@@ -34,6 +35,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/risks", riskRoutes);
+app.use("/api/rag", ragRoutes);
 // Static Files
 app.use("/uploads", express.static("uploads"));
 
