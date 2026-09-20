@@ -540,9 +540,9 @@ button {
 
 .event-card {
   border:
-    1px solid #e1e6e2;
+    1px solid rgba(62, 128, 108, 0.12);
 
-  border-radius: 16px;
+  border-radius: 18px;
 
   padding: 20px;
 
@@ -553,7 +553,20 @@ button {
   gap: 20px;
 
   background:
-    rgba(255, 255, 255, 0.78);
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(84, 175, 143, 0.14),
+      transparent 32%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(242, 255, 249, 0.92),
+      rgba(225, 241, 231, 0.72)
+    );
+
+  box-shadow:
+    0 10px 26px rgba(45, 58, 51, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 
   transition:
     transform 0.2s ease,
@@ -564,10 +577,11 @@ button {
 .event-card:hover {
   transform: translateY(-2px);
 
-  border-color: #d0d9d4;
+  border-color: rgba(62, 128, 108, 0.22);
 
   box-shadow:
-    0 10px 24px rgba(29, 45, 39, 0.06);
+    0 14px 30px rgba(45, 58, 51, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
 }
 
 .event-card-content {
@@ -822,7 +836,7 @@ button {
   display: grid;
 
   grid-template-columns:
-    repeat(2, minmax(0, 1fr));
+    repeat(4, minmax(0, 1fr));
 
   gap: 18px;
 
@@ -1559,6 +1573,11 @@ button {
   }
 
   .dashboard-stats {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-stats {
     grid-template-columns: 1fr;
   }
 
@@ -1802,3 +1821,292 @@ section,
     min-width: 100%;
   }
 }
+.toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+
+  min-width: 280px;
+  max-width: 420px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 14px 16px;
+
+  border-radius: 14px;
+  background: #ffffff;
+  color: #285f50;
+
+  box-shadow: 0 12px 30px rgba(31, 72, 61, 0.18);
+  border: 1px solid rgba(40, 95, 80, 0.12);
+
+  animation: toast-slide-in 0.25s ease-out;
+}
+
+.toast-success {
+  border-left: 5px solid #4f8f72;
+}
+
+.toast-error {
+  border-left: 5px solid #c96b6b;
+  color: #8f3f3f;
+}
+
+.toast-message {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.toast-close {
+  border: none;
+  background: transparent;
+  color: #6f8179;
+
+  font-size: 22px;
+  line-height: 1;
+
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.toast-close:hover {
+  color: #285f50;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px) {
+  .toast {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+/* =========================================================
+   SIDEBAR SCROLLBAR — INVISIBLE BUT STILL SCROLLABLE
+   ========================================================= */
+
+.navbar-links {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.navbar-links::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+.navbar-links::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navbar-links::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+
+/* =========================================================
+   CLUBOPS AI — GLOBAL PAGE ALIGNMENT
+   Keeps every page centered and visually even
+   ========================================================= */
+
+.app > main {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* Shared page containers */
+.events-page,
+.dashboard-page,
+.page-container {
+  width: min(1180px, calc(100% - 64px));
+  max-width: 1180px;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Consistent page headers */
+.page-header,
+.dashboard-header {
+  width: 100%;
+  text-align: center;
+}
+
+.page-header .eyebrow,
+.dashboard-header .dashboard-eyebrow {
+  text-align: center;
+}
+
+.page-header p,
+.dashboard-header .dashboard-subtitle {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Shared content sections stay centered */
+.page-container {
+  margin-top: 0;
+}
+
+.page-container > *,
+.events-page > *,
+.dashboard-page > * {
+  width: 100%;
+}
+
+/* Forms and cards use the same centered content width */
+.event-form-section,
+.events-section,
+.deadline-section {
+  width: 100%;
+}
+
+/* Keep form headings visually centered */
+.event-form-section h2 {
+  text-align: center;
+}
+
+/* Consistent spacing between page header and first card */
+.page-header {
+  margin-top: 0;
+}
+
+/* Sidebar stays independent from page centering */
+.navbar {
+  flex-shrink: 0;
+}
+
+/* Desktop */
+@media (min-width: 701px) {
+  .app > main {
+    min-width: 0;
+  }
+
+  .events-page,
+  .dashboard-page,
+  .page-container {
+    width: min(1180px, calc(100% - 64px));
+  }
+}
+
+/* Tablet */
+@media (max-width: 950px) and (min-width: 701px) {
+  .events-page,
+  .dashboard-page,
+  .page-container {
+    width: min(100%, calc(100% - 40px));
+  }
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .events-page,
+  .dashboard-page,
+  .page-container {
+    width: 100%;
+    max-width: none;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .page-header,
+  .dashboard-header {
+    text-align: center;
+  }
+
+  .page-header p,
+  .dashboard-header .dashboard-subtitle {
+    max-width: 100%;
+  }
+}
+
+
+/* =========================================================
+   ACTION LINKS — OPEN / VIEW
+   Makes document/page links match the ClubOps AI theme
+   ========================================================= */
+
+.app > main a[href] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 44px;
+  padding: 10px 18px;
+
+  border: 1px solid rgba(62, 128, 108, 0.14);
+  border-radius: 12px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(242, 255, 249, 0.96),
+      rgba(225, 241, 231, 0.82)
+    );
+
+  color: #285f50;
+
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+
+  text-decoration: none;
+
+  box-shadow:
+    0 5px 14px rgba(45, 58, 51, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.app > main a[href]:hover {
+  transform: translateY(-1px);
+
+  border-color: rgba(62, 128, 108, 0.25);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(232, 250, 241, 1),
+      rgba(210, 235, 220, 0.9)
+    );
+
+  color: #173d32;
+
+  box-shadow:
+    0 8px 18px rgba(45, 58, 51, 0.08);
+}
+
+.app > main a[href]:active {
+  transform: translateY(0);
+}
+

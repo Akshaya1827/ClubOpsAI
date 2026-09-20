@@ -7,7 +7,7 @@ import {
 } from "../services/api";
 import { canPerformAction } from "../config/permissions";
 
-function Volunteers() {
+function Volunteers({ showToast }) {
   const [volunteers, setVolunteers] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -23,53 +23,96 @@ function Volunteers() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const savedUser = localStorage.getItem("clubops_user");
+  const savedUser =
+    localStorage.getItem("clubops_user");
 
   let user = null;
 
   try {
-    user = savedUser ? JSON.parse(savedUser) : null;
+    user = savedUser
+      ? JSON.parse(savedUser)
+      : null;
   } catch {
     user = null;
   }
 
   const userRole = user?.role;
 
-  const canManageVolunteers = canPerformAction(
-    userRole,
-    "manageVolunteers"
-  );
+  const canManageVolunteers =
+    canPerformAction(
+      userRole,
+      "manageVolunteers"
+    );
 
-  const canDeleteVolunteer = canPerformAction(
-    userRole,
-    "deleteVolunteer"
-  );
+  const canDeleteVolunteer =
+    canPerformAction(
+      userRole,
+      "deleteVolunteer"
+    );
 
-  const fetchVolunteers = async () => {
+
+  /* =========================================================
+     LOAD VOLUNTEERS
+     ========================================================= */
+
+  const fetchVolunteers = async (
+    showSuccess = false
+  ) => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await getVolunteers();
+      const response =
+        await getVolunteers();
 
-      setVolunteers(response.data || []);
+      setVolunteers(
+        response.data || []
+      );
+
+      if (showSuccess && showToast) {
+        showToast(
+          "Volunteers refreshed successfully."
+        );
+      }
+
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Failed to load volunteers.",
+          "error"
+        );
+      }
+
     } finally {
       setLoading(false);
     }
   };
 
+
   useEffect(() => {
     fetchVolunteers();
   }, []);
 
+
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
+
   const handleChange = (event) => {
     setFormData({
       ...formData,
-      [event.target.name]: event.target.value,
+      [event.target.name]:
+        event.target.value,
     });
   };
+
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setFormData({
@@ -84,11 +127,24 @@ function Volunteers() {
     setEditingId(null);
   };
 
+
+  /* =========================================================
+     CREATE / UPDATE VOLUNTEER
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (!canManageVolunteers) {
-      setError("You do not have permission to manage volunteers.");
+      const message =
+        "You do not have permission to manage volunteers.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
@@ -99,50 +155,123 @@ function Volunteers() {
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
+
         skills: formData.skills
           .split(",")
-          .map((skill) => skill.trim())
-          .filter((skill) => skill !== ""),
-        availability: formData.availability,
+          .map((skill) =>
+            skill.trim()
+          )
+          .filter(
+            (skill) => skill !== ""
+          ),
+
+        availability:
+          formData.availability,
+
         status: formData.status,
       };
 
+
       if (editingId) {
-        await updateVolunteer(editingId, volunteerData);
+
+        await updateVolunteer(
+          editingId,
+          volunteerData
+        );
+
+        if (showToast) {
+          showToast(
+            "Volunteer updated successfully."
+          );
+        }
+
       } else {
-        await createVolunteer(volunteerData);
+
+        await createVolunteer(
+          volunteerData
+        );
+
+        if (showToast) {
+          showToast(
+            "Volunteer added successfully."
+          );
+        }
+
       }
 
+
       resetForm();
+
       await fetchVolunteers();
+
 
       window.scrollTo({
         top: 0,
         behavior: "smooth",
       });
+
     } catch (err) {
+
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Something went wrong.",
+          "error"
+        );
+      }
+
     }
   };
 
+
+  /* =========================================================
+     EDIT VOLUNTEER
+     ========================================================= */
+
   const handleEdit = (volunteer) => {
+
     if (!canManageVolunteers) {
-      setError("You do not have permission to edit volunteers.");
+
+      const message =
+        "You do not have permission to edit volunteers.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
-    setEditingId(volunteer._id);
+
+    setEditingId(
+      volunteer._id
+    );
+
 
     setFormData({
       name: volunteer.name || "",
       email: volunteer.email || "",
       phone: volunteer.phone || "",
-      skills: Array.isArray(volunteer.skills)
+
+      skills: Array.isArray(
+        volunteer.skills
+      )
         ? volunteer.skills.join(", ")
         : "",
-      availability: volunteer.availability || "Available",
-      status: volunteer.status || "Active",
+
+      availability:
+        volunteer.availability ||
+        "Available",
+
+      status:
+        volunteer.status ||
+        "Active",
     });
+
 
     window.scrollTo({
       top: 0,
@@ -150,62 +279,161 @@ function Volunteers() {
     });
   };
 
-  const handleDelete = async (volunteerId) => {
+
+  /* =========================================================
+     DELETE VOLUNTEER
+     ========================================================= */
+
+  const handleDelete = async (
+    volunteerId
+  ) => {
+
     if (!canDeleteVolunteer) {
-      setError("You do not have permission to delete volunteers.");
+
+      const message =
+        "You do not have permission to delete volunteers.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this volunteer?"
-    );
+
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to delete this volunteer?"
+      );
+
 
     if (!confirmed) {
       return;
     }
 
+
     try {
+
       setError("");
 
-      await deleteVolunteer(volunteerId);
+      await deleteVolunteer(
+        volunteerId
+      );
 
-      if (editingId === volunteerId) {
+
+      if (
+        editingId === volunteerId
+      ) {
         resetForm();
       }
 
+
+      if (showToast) {
+        showToast(
+          "Volunteer deleted successfully."
+        );
+      }
+
+
       await fetchVolunteers();
+
     } catch (err) {
+
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Failed to delete volunteer.",
+          "error"
+        );
+      }
+
     }
   };
 
+
+  /* =========================================================
+     UI
+     ========================================================= */
+
   return (
     <div className="page-container">
+
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <div className="page-header">
+
         <div>
-          <h1>Volunteers</h1>
-          <p>Manage club volunteers and their availability.</p>
+
+          <h1>
+            Volunteers
+          </h1>
+
+          <p>
+            Manage club volunteers and
+            their availability.
+          </p>
+
         </div>
+
 
         <button
           type="button"
           className="secondary-button"
-          onClick={fetchVolunteers}
+          onClick={() =>
+            fetchVolunteers(true)
+          }
         >
           Refresh
         </button>
+
       </div>
 
-      {error && <div className="error-message">{error}</div>}
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
+
+      {/* =====================================================
+          ADD / EDIT FORM
+      ===================================================== */}
 
       {canManageVolunteers && (
-        <section className="form-card">
-          <h2>{editingId ? "Edit Volunteer" : "Add Volunteer"}</h2>
 
-          <form onSubmit={handleSubmit}>
+        <section className="form-card">
+
+          <h2>
+            {editingId
+              ? "Edit Volunteer"
+              : "Add Volunteer"}
+          </h2>
+
+
+          <form
+            onSubmit={handleSubmit}
+          >
+
             <div className="form-grid">
+
+              {/* NAME */}
+
               <div className="form-group">
-                <label htmlFor="volunteer-name">Name</label>
+
+                <label htmlFor="volunteer-name">
+                  Name
+                </label>
 
                 <input
                   id="volunteer-name"
@@ -216,10 +444,17 @@ function Volunteers() {
                   placeholder="Enter volunteer name"
                   required
                 />
+
               </div>
 
+
+              {/* EMAIL */}
+
               <div className="form-group">
-                <label htmlFor="volunteer-email">Email</label>
+
+                <label htmlFor="volunteer-email">
+                  Email
+                </label>
 
                 <input
                   id="volunteer-email"
@@ -230,10 +465,17 @@ function Volunteers() {
                   placeholder="Enter email"
                   required
                 />
+
               </div>
 
+
+              {/* PHONE */}
+
               <div className="form-group">
-                <label htmlFor="volunteer-phone">Phone</label>
+
+                <label htmlFor="volunteer-phone">
+                  Phone
+                </label>
 
                 <input
                   id="volunteer-phone"
@@ -243,10 +485,17 @@ function Volunteers() {
                   onChange={handleChange}
                   placeholder="Enter phone number"
                 />
+
               </div>
 
+
+              {/* SKILLS */}
+
               <div className="form-group">
-                <label htmlFor="volunteer-skills">Skills</label>
+
+                <label htmlFor="volunteer-skills">
+                  Skills
+                </label>
 
                 <input
                   id="volunteer-skills"
@@ -258,11 +507,17 @@ function Volunteers() {
                 />
 
                 <small>
-                  Separate multiple skills with commas.
+                  Separate multiple skills
+                  with commas.
                 </small>
+
               </div>
 
+
+              {/* AVAILABILITY */}
+
               <div className="form-group">
+
                 <label htmlFor="volunteer-availability">
                   Availability
                 </label>
@@ -273,14 +528,31 @@ function Volunteers() {
                   value={formData.availability}
                   onChange={handleChange}
                 >
-                  <option value="Available">Available</option>
-                  <option value="Busy">Busy</option>
-                  <option value="Unavailable">Unavailable</option>
+
+                  <option value="Available">
+                    Available
+                  </option>
+
+                  <option value="Busy">
+                    Busy
+                  </option>
+
+                  <option value="Unavailable">
+                    Unavailable
+                  </option>
+
                 </select>
+
               </div>
 
+
+              {/* STATUS */}
+
               <div className="form-group">
-                <label htmlFor="volunteer-status">Status</label>
+
+                <label htmlFor="volunteer-status">
+                  Status
+                </label>
 
                 <select
                   id="volunteer-status"
@@ -288,21 +560,38 @@ function Volunteers() {
                   value={formData.status}
                   onChange={handleChange}
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+
+                  <option value="Active">
+                    Active
+                  </option>
+
+                  <option value="Inactive">
+                    Inactive
+                  </option>
+
                 </select>
+
               </div>
+
             </div>
 
+
+            {/* FORM ACTIONS */}
+
             <div className="form-actions">
+
               <button
                 type="submit"
                 className="primary-button"
               >
-                {editingId ? "Update Volunteer" : "Add Volunteer"}
+                {editingId
+                  ? "Update Volunteer"
+                  : "Add Volunteer"}
               </button>
 
+
               {editingId && (
+
                 <button
                   type="button"
                   className="secondary-button"
@@ -310,123 +599,232 @@ function Volunteers() {
                 >
                   Cancel Edit
                 </button>
+
               )}
+
             </div>
+
           </form>
+
         </section>
+
       )}
 
+
+      {/* =====================================================
+          VOLUNTEER LIST
+      ===================================================== */}
+
       <section className="content-section">
+
         <div className="section-header">
-          <h2>Volunteer List</h2>
+
+          <h2>
+            Volunteer List
+          </h2>
 
           <span className="item-count">
+
             {volunteers.length} volunteer
-            {volunteers.length !== 1 ? "s" : ""}
+            {volunteers.length !== 1
+              ? "s"
+              : ""}
+
           </span>
+
         </div>
 
+
+        {/* ===================================================
+            LOADING
+        =================================================== */}
+
         {loading ? (
+
           <div className="empty-state">
             Loading volunteers...
           </div>
+
         ) : volunteers.length === 0 ? (
+
           <div className="empty-state">
+
             No volunteers found.
+
             {canManageVolunteers
               ? " Add your first volunteer above."
               : ""}
+
           </div>
+
         ) : (
+
           <div className="card-grid">
-            {volunteers.map((volunteer) => (
-              <article
-                className="data-card"
-                key={volunteer._id}
-              >
-                <div className="card-header">
-                  <div>
-                    <h3>{volunteer.name}</h3>
-                    <p>{volunteer.email}</p>
-                  </div>
 
-                  <span
-                    className={`status-badge ${
-                      volunteer.status === "Active"
-                        ? "status-active"
-                        : "status-inactive"
-                    }`}
-                  >
-                    {volunteer.status}
-                  </span>
-                </div>
+            {volunteers.map(
+              (volunteer) => (
 
-                <div className="card-details">
-                  {volunteer.phone && (
-                    <p>
-                      <strong>Phone:</strong>{" "}
-                      {volunteer.phone}
-                    </p>
-                  )}
+                <article
+                  className="data-card"
+                  key={volunteer._id}
+                >
 
-                  <p>
-                    <strong>Availability:</strong>{" "}
-                    {volunteer.availability}
-                  </p>
+                  {/* =========================================
+                      CARD HEADER
+                  ========================================= */}
 
-                  <div>
-                    <strong>Skills:</strong>
+                  <div className="card-header">
 
-                    {volunteer.skills &&
-                    volunteer.skills.length > 0 ? (
-                      <div className="skill-list">
-                        {volunteer.skills.map(
-                          (skill, index) => (
-                            <span
-                              className="skill-tag"
-                              key={`${volunteer._id}-${index}`}
-                            >
-                              {skill}
-                            </span>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <span> No skills listed</span>
-                    )}
-                  </div>
-                </div>
+                    <div>
 
-                {canManageVolunteers && (
-                  <div className="card-actions">
-                    <button
-                      type="button"
-                      className="secondary-button"
-                      onClick={() =>
-                        handleEdit(volunteer)
-                      }
+                      <h3>
+                        {volunteer.name}
+                      </h3>
+
+                      <p>
+                        {volunteer.email}
+                      </p>
+
+                    </div>
+
+
+                    <span
+                      className={`status-badge ${
+                        volunteer.status ===
+                        "Active"
+                          ? "status-active"
+                          : "status-inactive"
+                      }`}
                     >
-                      Edit
-                    </button>
+                      {volunteer.status}
+                    </span>
 
-                    {canDeleteVolunteer && (
+                  </div>
+
+
+                  {/* =========================================
+                      CARD DETAILS
+                  ========================================= */}
+
+                  <div className="card-details">
+
+                    {volunteer.phone && (
+
+                      <p>
+                        <strong>
+                          Phone:
+                        </strong>{" "}
+                        {volunteer.phone}
+                      </p>
+
+                    )}
+
+
+                    <p>
+                      <strong>
+                        Availability:
+                      </strong>{" "}
+                      {volunteer.availability}
+                    </p>
+
+
+                    <div>
+
+                      <strong>
+                        Skills:
+                      </strong>
+
+
+                      {volunteer.skills &&
+                      volunteer.skills.length >
+                        0 ? (
+
+                        <div className="skill-list">
+
+                          {volunteer.skills.map(
+                            (
+                              skill,
+                              index
+                            ) => (
+
+                              <span
+                                className="skill-tag"
+                                key={`${volunteer._id}-${index}`}
+                              >
+                                {skill}
+                              </span>
+
+                            )
+                          )}
+
+                        </div>
+
+                      ) : (
+
+                        <span>
+                          {" "}
+                          No skills listed
+                        </span>
+
+                      )}
+
+                    </div>
+
+                  </div>
+
+
+                  {/* =========================================
+                      ACTIONS
+                  ========================================= */}
+
+                  {canManageVolunteers && (
+
+                    <div className="card-actions">
+
                       <button
                         type="button"
-                        className="danger-button"
+                        className="secondary-button"
                         onClick={() =>
-                          handleDelete(volunteer._id)
+                          handleEdit(
+                            volunteer
+                          )
                         }
                       >
-                        Delete
+                        Edit
                       </button>
-                    )}
-                  </div>
-                )}
-              </article>
-            ))}
+
+
+                      {canDeleteVolunteer && (
+
+                        <button
+                          type="button"
+                          className="danger-button"
+                          onClick={() =>
+                            handleDelete(
+                              volunteer._id
+                            )
+                          }
+                        >
+                          Delete
+                        </button>
+
+                      )}
+
+                    </div>
+
+                  )}
+
+                </article>
+
+              )
+            )}
+
           </div>
+
         )}
+
       </section>
+
     </div>
   );
 }

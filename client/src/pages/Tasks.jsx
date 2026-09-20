@@ -8,7 +8,7 @@ import {
 } from "../services/api";
 import { canPerformAction } from "../config/permissions";
 
-function Tasks() {
+function Tasks({ showToast }) {
   const [tasks, setTasks] = useState([]);
   const [events, setEvents] = useState([]);
 
@@ -53,30 +53,51 @@ function Tasks() {
     "deleteTask"
   );
 
-  const canManageTasks = canCreateTask || canEditTask;
+  const canManageTasks =
+    canCreateTask || canEditTask;
+
+
+  /* =========================================================
+     LOAD TASKS AND EVENTS
+     ========================================================= */
 
   const loadData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [taskData, eventData] = await Promise.all([
-        getTasks(),
-        getEvents(),
-      ]);
+      const [taskData, eventData] =
+        await Promise.all([
+          getTasks(),
+          getEvents(),
+        ]);
 
       setTasks(taskData.tasks || []);
       setEvents(eventData.events || []);
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Failed to load tasks.",
+          "error"
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
   useEffect(() => {
     loadData();
   }, []);
+
+
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -86,6 +107,11 @@ function Tasks() {
       [name]: value,
     }));
   };
+
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setForm({
@@ -100,16 +126,37 @@ function Tasks() {
     setEditingId(null);
   };
 
+
+  /* =========================================================
+     CREATE / UPDATE TASK
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     if (editingId && !canEditTask) {
-      setError("You do not have permission to edit tasks.");
+      const message =
+        "You do not have permission to edit tasks.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
     if (!editingId && !canCreateTask) {
-      setError("You do not have permission to create tasks.");
+      const message =
+        "You do not have permission to create tasks.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
@@ -117,12 +164,28 @@ function Tasks() {
       setError("");
 
       if (!form.event) {
-        setError("Please select an event.");
+        const message =
+          "Please select an event.";
+
+        setError(message);
+
+        if (showToast) {
+          showToast(message, "error");
+        }
+
         return;
       }
 
       if (!form.dueDate) {
-        setError("Please select a due date.");
+        const message =
+          "Please select a due date.";
+
+        setError(message);
+
+        if (showToast) {
+          showToast(message, "error");
+        }
+
         return;
       }
 
@@ -132,25 +195,64 @@ function Tasks() {
         event: form.event,
         priority: form.priority,
         status: form.status,
-        dueDate: new Date(form.dueDate).toISOString(),
+        dueDate: new Date(
+          form.dueDate
+        ).toISOString(),
       };
 
       if (editingId) {
-        await updateTask(editingId, taskData);
+        await updateTask(
+          editingId,
+          taskData
+        );
+
+        if (showToast) {
+          showToast(
+            "Task updated successfully."
+          );
+        }
       } else {
         await createTask(taskData);
+
+        if (showToast) {
+          showToast(
+            "Task created successfully."
+          );
+        }
       }
 
       resetForm();
+
       await loadData();
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Something went wrong.",
+          "error"
+        );
+      }
     }
   };
 
+
+  /* =========================================================
+     EDIT TASK
+     ========================================================= */
+
   const handleEdit = (task) => {
     if (!canEditTask) {
-      setError("You do not have permission to edit tasks.");
+      const message =
+        "You do not have permission to edit tasks.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
@@ -163,10 +265,13 @@ function Tasks() {
 
     setForm({
       title: task.title || "",
-      description: task.description || "",
+      description:
+        task.description || "",
       event: eventId || "",
-      priority: task.priority || "medium",
-      status: task.status || "todo",
+      priority:
+        task.priority || "medium",
+      status:
+        task.status || "todo",
       dueDate: task.dueDate
         ? new Date(task.dueDate)
             .toISOString()
@@ -180,9 +285,22 @@ function Tasks() {
     });
   };
 
+
+  /* =========================================================
+     DELETE TASK
+     ========================================================= */
+
   const handleDelete = async (taskId) => {
     if (!canDeleteTask) {
-      setError("You do not have permission to delete tasks.");
+      const message =
+        "You do not have permission to delete tasks.";
+
+      setError(message);
+
+      if (showToast) {
+        showToast(message, "error");
+      }
+
       return;
     }
 
@@ -198,11 +316,31 @@ function Tasks() {
       setError("");
 
       await deleteTask(taskId);
+
+      if (showToast) {
+        showToast(
+          "Task deleted successfully."
+        );
+      }
+
       await loadData();
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message ||
+            "Failed to delete task.",
+          "error"
+        );
+      }
     }
   };
+
+
+  /* =========================================================
+     GET EVENT TITLE
+     ========================================================= */
 
   const getEventTitle = (event) => {
     if (!event) {
@@ -213,26 +351,49 @@ function Tasks() {
       return event.title;
     }
 
-    const matchingEvent = events.find(
-      (item) => item._id === event
-    );
+    const matchingEvent =
+      events.find(
+        (item) => item._id === event
+      );
 
     return matchingEvent
       ? matchingEvent.title
       : "Unknown event";
   };
 
+
+  /* =========================================================
+     UI
+     ========================================================= */
+
   return (
     <div className="events-page">
+
       <header className="page-header">
+
         <div>
-          <p className="eyebrow">ClubOps AI</p>
-          <h1>Tasks</h1>
-          <p>
-            Manage tasks, priorities, statuses, and deadlines.
+
+          <p className="eyebrow">
+            ClubOps AI
           </p>
+
+          <h1>
+            Tasks
+          </h1>
+
+          <p>
+            Manage tasks, priorities,
+            statuses, and deadlines.
+          </p>
+
         </div>
+
       </header>
+
+
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
 
       {error && (
         <div className="error-message">
@@ -240,14 +401,24 @@ function Tasks() {
         </div>
       )}
 
+
+      {/* =====================================================
+          CREATE / EDIT FORM
+      ===================================================== */}
+
       {canManageTasks && (
         <section className="event-form-section">
+
           <h2>
-            {editingId ? "Edit Task" : "Create Task"}
+            {editingId
+              ? "Edit Task"
+              : "Create Task"}
           </h2>
 
           <form onSubmit={handleSubmit}>
+
             <div className="form-group">
+
               <label htmlFor="title">
                 Task Title
               </label>
@@ -261,9 +432,12 @@ function Tasks() {
                 placeholder="Enter task title"
                 required
               />
+
             </div>
 
+
             <div className="form-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -276,10 +450,14 @@ function Tasks() {
                 placeholder="Enter task description"
                 rows="4"
               />
+
             </div>
 
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="event">
                   Event
                 </label>
@@ -291,6 +469,7 @@ function Tasks() {
                   onChange={handleChange}
                   required
                 >
+
                   <option value="">
                     Select an event
                   </option>
@@ -303,10 +482,14 @@ function Tasks() {
                       {event.title}
                     </option>
                   ))}
+
                 </select>
+
               </div>
 
+
               <div className="form-group">
+
                 <label htmlFor="priority">
                   Priority
                 </label>
@@ -317,15 +500,30 @@ function Tasks() {
                   value={form.priority}
                   onChange={handleChange}
                 >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
+
+                  <option value="low">
+                    Low
+                  </option>
+
+                  <option value="medium">
+                    Medium
+                  </option>
+
+                  <option value="high">
+                    High
+                  </option>
+
                 </select>
+
               </div>
+
             </div>
 
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="status">
                   Status
                 </label>
@@ -336,17 +534,26 @@ function Tasks() {
                   value={form.status}
                   onChange={handleChange}
                 >
-                  <option value="todo">To Do</option>
+
+                  <option value="todo">
+                    To Do
+                  </option>
+
                   <option value="in-progress">
                     In Progress
                   </option>
+
                   <option value="completed">
                     Completed
                   </option>
+
                 </select>
+
               </div>
 
+
               <div className="form-group">
+
                 <label htmlFor="dueDate">
                   Due Date
                 </label>
@@ -359,15 +566,20 @@ function Tasks() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
+
             </div>
 
+
             <div className="form-actions">
+
               <button type="submit">
                 {editingId
                   ? "Update Task"
                   : "Create Task"}
               </button>
+
 
               {editingId && (
                 <button
@@ -377,21 +589,38 @@ function Tasks() {
                   Cancel
                 </button>
               )}
+
             </div>
+
           </form>
+
         </section>
       )}
 
+
+      {/* =====================================================
+          VIEW ONLY
+      ===================================================== */}
+
       {!canManageTasks && (
         <div className="empty-state">
-          You can view tasks, but you do not have permission
-          to create or edit them.
+          You can view tasks, but you do not
+          have permission to create or edit them.
         </div>
       )}
 
+
+      {/* =====================================================
+          TASK LIST
+      ===================================================== */}
+
       <section className="events-section">
+
         <div className="section-heading">
-          <h2>All Tasks</h2>
+
+          <h2>
+            All Tasks
+          </h2>
 
           <button
             type="button"
@@ -399,39 +628,58 @@ function Tasks() {
           >
             Refresh
           </button>
+
         </div>
 
+
         {loading ? (
-          <p>Loading tasks...</p>
+          <p>
+            Loading tasks...
+          </p>
         ) : tasks.length === 0 ? (
-          <p>No tasks found.</p>
+          <p>
+            No tasks found.
+          </p>
         ) : (
           <div className="events-list">
+
             {tasks.map((task) => (
+
               <article
                 className="event-card"
                 key={task._id}
               >
+
                 <div className="event-card-content">
-                  <h3>{task.title}</h3>
+
+                  <h3>
+                    {task.title}
+                  </h3>
+
 
                   <p>
                     {task.description ||
                       "No description provided."}
                   </p>
 
+
                   <div className="event-details">
+
                     <span>
                       📌 Event:{" "}
-                      {getEventTitle(task.event)}
+                      {getEventTitle(
+                        task.event
+                      )}
                     </span>
 
                     <span>
-                      🎯 Priority: {task.priority}
+                      🎯 Priority:{" "}
+                      {task.priority}
                     </span>
 
                     <span>
-                      📋 Status: {task.status}
+                      📋 Status:{" "}
+                      {task.status}
                     </span>
 
                     <span>
@@ -440,11 +688,17 @@ function Tasks() {
                         task.dueDate
                       ).toLocaleString()}
                     </span>
+
                   </div>
+
                 </div>
 
-                {(canEditTask || canDeleteTask) && (
+
+                {(canEditTask ||
+                  canDeleteTask) && (
+
                   <div className="event-actions">
+
                     {canEditTask && (
                       <button
                         type="button"
@@ -456,23 +710,33 @@ function Tasks() {
                       </button>
                     )}
 
+
                     {canDeleteTask && (
                       <button
                         type="button"
                         onClick={() =>
-                          handleDelete(task._id)
+                          handleDelete(
+                            task._id
+                          )
                         }
                       >
                         Delete
                       </button>
                     )}
+
                   </div>
+
                 )}
+
               </article>
+
             ))}
+
           </div>
         )}
+
       </section>
+
     </div>
   );
 }

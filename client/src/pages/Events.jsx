@@ -7,7 +7,7 @@ import {
 } from "../services/api";
 import { canPerformAction } from "../config/permissions";
 
-function Events() {
+function Events({ showToast }) {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,6 +51,11 @@ function Events() {
   const canManageEvents =
     canCreateEvent || canEditEvent;
 
+
+  /* =========================================================
+     LOAD EVENTS
+     ========================================================= */
+
   const loadEvents = async () => {
     try {
       setLoading(true);
@@ -60,14 +65,27 @@ function Events() {
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message || "Failed to load events.",
+          "error"
+        );
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
   useEffect(() => {
     loadEvents();
   }, []);
+
+
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -77,6 +95,11 @@ function Events() {
       [name]: value,
     }));
   };
+
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setForm({
@@ -89,6 +112,11 @@ function Events() {
     setEditingId(null);
   };
 
+
+  /* =========================================================
+     CREATE / UPDATE EVENT
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -96,6 +124,14 @@ function Events() {
       setError(
         "You do not have permission to edit events."
       );
+
+      if (showToast) {
+        showToast(
+          "You do not have permission to edit events.",
+          "error"
+        );
+      }
+
       return;
     }
 
@@ -103,6 +139,14 @@ function Events() {
       setError(
         "You do not have permission to create events."
       );
+
+      if (showToast) {
+        showToast(
+          "You do not have permission to create events.",
+          "error"
+        );
+      }
+
       return;
     }
 
@@ -111,6 +155,14 @@ function Events() {
 
       if (!form.date) {
         setError("Please select a date and time.");
+
+        if (showToast) {
+          showToast(
+            "Please select a date and time.",
+            "error"
+          );
+        }
+
         return;
       }
 
@@ -122,23 +174,58 @@ function Events() {
       };
 
       if (editingId) {
-        await updateEvent(editingId, eventData);
+        await updateEvent(
+          editingId,
+          eventData
+        );
+
+        if (showToast) {
+          showToast(
+            "Event updated successfully."
+          );
+        }
       } else {
         await createEvent(eventData);
+
+        if (showToast) {
+          showToast(
+            "Event created successfully."
+          );
+        }
       }
 
       resetForm();
       await loadEvents();
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message || "Something went wrong.",
+          "error"
+        );
+      }
     }
   };
+
+
+  /* =========================================================
+     EDIT EVENT
+     ========================================================= */
 
   const handleEdit = (event) => {
     if (!canEditEvent) {
       setError(
         "You do not have permission to edit events."
       );
+
+      if (showToast) {
+        showToast(
+          "You do not have permission to edit events.",
+          "error"
+        );
+      }
+
       return;
     }
 
@@ -161,11 +248,24 @@ function Events() {
     });
   };
 
+
+  /* =========================================================
+     DELETE EVENT
+     ========================================================= */
+
   const handleDelete = async (eventId) => {
     if (!canDeleteEvent) {
       setError(
         "You do not have permission to delete events."
       );
+
+      if (showToast) {
+        showToast(
+          "You do not have permission to delete events.",
+          "error"
+        );
+      }
+
       return;
     }
 
@@ -181,21 +281,52 @@ function Events() {
       setError("");
 
       await deleteEvent(eventId);
+
+      if (showToast) {
+        showToast(
+          "Event deleted successfully."
+        );
+      }
+
       await loadEvents();
     } catch (err) {
       setError(err.message);
+
+      if (showToast) {
+        showToast(
+          err.message || "Failed to delete event.",
+          "error"
+        );
+      }
     }
   };
 
+
+  /* =========================================================
+     UI
+     ========================================================= */
+
   return (
     <div className="events-page">
+
       <header className="page-header">
         <div>
-          <p className="eyebrow">ClubOps AI</p>
+          <p className="eyebrow">
+            ClubOps AI
+          </p>
+
           <h1>Events</h1>
-          <p>Manage club events and their schedules.</p>
+
+          <p>
+            Manage club events and their schedules.
+          </p>
         </div>
       </header>
+
+
+      {/* =====================================================
+          ERROR MESSAGE
+      ===================================================== */}
 
       {error && (
         <div className="error-message">
@@ -203,14 +334,24 @@ function Events() {
         </div>
       )}
 
+
+      {/* =====================================================
+          CREATE / EDIT FORM
+      ===================================================== */}
+
       {canManageEvents && (
         <section className="event-form-section">
+
           <h2>
-            {editingId ? "Edit Event" : "Create Event"}
+            {editingId
+              ? "Edit Event"
+              : "Create Event"}
           </h2>
 
           <form onSubmit={handleSubmit}>
+
             <div className="form-group">
+
               <label htmlFor="title">
                 Event Title
               </label>
@@ -224,9 +365,12 @@ function Events() {
                 placeholder="Enter event title"
                 required
               />
+
             </div>
 
+
             <div className="form-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -239,10 +383,14 @@ function Events() {
                 placeholder="Enter event description"
                 rows="4"
               />
+
             </div>
 
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="date">
                   Date and Time
                 </label>
@@ -255,9 +403,12 @@ function Events() {
                   onChange={handleChange}
                   required
                 />
+
               </div>
 
+
               <div className="form-group">
+
                 <label htmlFor="location">
                   Location
                 </label>
@@ -270,15 +421,20 @@ function Events() {
                   onChange={handleChange}
                   placeholder="Enter location"
                 />
+
               </div>
+
             </div>
 
+
             <div className="form-actions">
+
               <button type="submit">
                 {editingId
                   ? "Update Event"
                   : "Create Event"}
               </button>
+
 
               {editingId && (
                 <button
@@ -288,10 +444,18 @@ function Events() {
                   Cancel
                 </button>
               )}
+
             </div>
+
           </form>
+
         </section>
       )}
+
+
+      {/* =====================================================
+          VIEW-ONLY MESSAGE
+      ===================================================== */}
 
       {!canManageEvents && (
         <div className="empty-state">
@@ -300,9 +464,18 @@ function Events() {
         </div>
       )}
 
+
+      {/* =====================================================
+          EVENTS LIST
+      ===================================================== */}
+
       <section className="events-section">
+
         <div className="section-heading">
-          <h2>All Events</h2>
+
+          <h2>
+            All Events
+          </h2>
 
           <button
             type="button"
@@ -310,28 +483,42 @@ function Events() {
           >
             Refresh
           </button>
+
         </div>
 
+
         {loading ? (
-          <p>Loading events...</p>
+          <p>
+            Loading events...
+          </p>
         ) : events.length === 0 ? (
-          <p>No events found.</p>
+          <p>
+            No events found.
+          </p>
         ) : (
           <div className="events-list">
+
             {events.map((event) => (
+
               <article
                 className="event-card"
                 key={event._id}
               >
+
                 <div className="event-card-content">
-                  <h3>{event.title}</h3>
+
+                  <h3>
+                    {event.title}
+                  </h3>
 
                   <p>
                     {event.description ||
                       "No description provided."}
                   </p>
 
+
                   <div className="event-details">
+
                     <span>
                       📅{" "}
                       {new Date(
@@ -348,12 +535,17 @@ function Events() {
                     <span>
                       Status: {event.status}
                     </span>
+
                   </div>
+
                 </div>
+
 
                 {(canEditEvent ||
                   canDeleteEvent) && (
+
                   <div className="event-actions">
+
                     {canEditEvent && (
                       <button
                         type="button"
@@ -365,23 +557,32 @@ function Events() {
                       </button>
                     )}
 
+
                     {canDeleteEvent && (
                       <button
                         type="button"
                         onClick={() =>
-                          handleDelete(event._id)
+                          handleDelete(
+                            event._id
+                          )
                         }
                       >
                         Delete
                       </button>
                     )}
+
                   </div>
                 )}
+
               </article>
+
             ))}
+
           </div>
         )}
+
       </section>
+
     </div>
   );
 }

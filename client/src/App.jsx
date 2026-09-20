@@ -18,17 +18,14 @@ import Meetings from "./pages/Meetings";
 import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
 
+import Toast from "./components/Toast";
+
 import {
   canAccessPage,
   getRoleLabel,
 } from "./config/permissions";
 
 import "./App.css";
-
-
-/* =========================================================
-   NAVIGATION ITEMS
-   ========================================================= */
 
 const NAV_ITEMS = [
   {
@@ -47,24 +44,22 @@ const NAV_ITEMS = [
     path: "/tasks",
   },
   {
+    key: "meetings",
+    label: "Meetings",
+    path: "/meetings",
+  },
+];
+
+const MORE_ITEMS = [
+  {
     key: "deadlines",
     label: "Deadlines",
     path: "/deadlines",
   },
   {
-    key: "volunteers",
-    label: "Volunteers",
-    path: "/volunteers",
-  },
-  {
     key: "documents",
     label: "Documents",
     path: "/documents",
-  },
-  {
-    key: "meetings",
-    label: "Meetings",
-    path: "/meetings",
   },
   {
     key: "announcements",
@@ -73,10 +68,18 @@ const NAV_ITEMS = [
   },
 ];
 
-
-/* =========================================================
-   PROTECTED ROUTE
-   ========================================================= */
+const FUTURE_ITEMS = [
+  {
+    key: "about",
+    label: "About",
+    path: "/about",
+  },
+  {
+    key: "contact",
+    label: "Contact Us",
+    path: "/contact",
+  },
+];
 
 function ProtectedRoute({ user, children }) {
   const location = useLocation();
@@ -94,44 +97,93 @@ function ProtectedRoute({ user, children }) {
   return children;
 }
 
-
-/* =========================================================
-   PROTECTED APPLICATION
-   ========================================================= */
-
-function ProtectedApp({ user, onLogout }) {
+function ProtectedApp({
+  user,
+  onLogout,
+  toast,
+  clearToast,
+  showToast,
+}) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const currentNavItem = NAV_ITEMS.find(
-    (item) => item.path === location.pathname
-  );
+  const [moreOpen, setMoreOpen] = useState(false);
 
-  const activePage = currentNavItem?.key || "dashboard";
+  const allExistingItems = [
+    ...NAV_ITEMS,
+    ...MORE_ITEMS,
+  ];
 
-  const visibleNavItems = NAV_ITEMS.filter((item) =>
-    canAccessPage(user.role, item.key)
-  );
+  const currentNavItem =
+    allExistingItems.find(
+      (item) =>
+        item.path === location.pathname
+    );
 
+  const activePage =
+    currentNavItem?.key || "";
 
-  /* =======================================================
-     CHECK PAGE PERMISSION
-     ======================================================= */
+  const visibleNavItems =
+    NAV_ITEMS.filter((item) =>
+      canAccessPage(
+        user.role,
+        item.key
+      )
+    );
+
+  const visibleMoreItems =
+    MORE_ITEMS.filter((item) =>
+      canAccessPage(
+        user.role,
+        item.key
+      )
+    );
+
+  const isMoreActive =
+    visibleMoreItems.some(
+      (item) =>
+        item.path ===
+        location.pathname
+    );
 
   useEffect(() => {
-    const currentItem = NAV_ITEMS.find(
-      (item) => item.path === location.pathname
-    );
+    if (isMoreActive) {
+      setMoreOpen(true);
+    }
+  }, [isMoreActive]);
+
+  useEffect(() => {
+    const currentItem =
+      allExistingItems.find(
+        (item) =>
+          item.path ===
+          location.pathname
+      );
+
+    const futurePath =
+      FUTURE_ITEMS.some(
+        (item) =>
+          item.path ===
+          location.pathname
+      );
+
+    if (futurePath) {
+      return;
+    }
 
     if (!currentItem) {
       navigate("/dashboard", {
         replace: true,
       });
-
       return;
     }
 
-    if (!canAccessPage(user.role, currentItem.key)) {
+    if (
+      !canAccessPage(
+        user.role,
+        currentItem.key
+      )
+    ) {
       navigate("/dashboard", {
         replace: true,
       });
@@ -142,14 +194,14 @@ function ProtectedApp({ user, onLogout }) {
     navigate,
   ]);
 
-
-  /* =======================================================
-     LOGOUT
-     ======================================================= */
-
   const handleLogout = () => {
-    localStorage.removeItem("clubops_token");
-    localStorage.removeItem("clubops_user");
+    localStorage.removeItem(
+      "clubops_token"
+    );
+
+    localStorage.removeItem(
+      "clubops_user"
+    );
 
     onLogout();
 
@@ -158,199 +210,387 @@ function ProtectedApp({ user, onLogout }) {
     });
   };
 
-
-  /* =======================================================
-     SIDEBAR NAVIGATION
-     ======================================================= */
-
-  const handlePageChange = (item) => {
-    if (!canAccessPage(user.role, item.key)) {
+  const handlePageChange = (
+    item
+  ) => {
+    if (
+      !canAccessPage(
+        user.role,
+        item.key
+      )
+    ) {
       return;
     }
 
-    if (location.pathname === item.path) {
+    if (
+      location.pathname ===
+      item.path
+    ) {
       return;
     }
 
     navigate(item.path);
   };
 
+  const handleFuturePage = (
+    path
+  ) => {
+    navigate(path);
+  };
 
   return (
-    <div className="app">
+    <>
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        onClose={clearToast}
+      />
 
-      {/* ===================================================
-          SIDEBAR
-      =================================================== */}
+      <div className="app">
+        <nav className="navbar">
+          <div className="navbar-brand">
+            <span className="brand-name">
+              ClubOps AI
+            </span>
 
-      <nav className="navbar">
+            <span className="brand-subtitle">
+              Club Operations
+            </span>
+          </div>
 
-        <div className="navbar-brand">
-          <span className="brand-name">
-            ClubOps AI
-          </span>
+          <div className="navbar-links">
+            {visibleNavItems.map(
+              (item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={
+                    activePage ===
+                    item.key
+                      ? "nav-button active"
+                      : "nav-button"
+                  }
+                  onClick={() =>
+                    handlePageChange(
+                      item
+                    )
+                  }
+                >
+                  {item.label}
+                </button>
+              )
+            )}
 
-          <span className="brand-subtitle">
-            Club Operations
-          </span>
-        </div>
+            {FUTURE_ITEMS.map(
+              (item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={
+                    activePage ===
+                    item.key
+                      ? "nav-button active"
+                      : "nav-button"
+                  }
+                  onClick={() =>
+                    handleFuturePage(
+                      item.path
+                    )
+                  }
+                >
+                  {item.label}
+                </button>
+              )
+            )}
 
+            {visibleMoreItems.length >
+              0 && (
+              <>
+                <button
+                  type="button"
+                  className={
+                    isMoreActive
+                      ? "nav-button active"
+                      : "nav-button"
+                  }
+                  onClick={() =>
+                    setMoreOpen(
+                      (current) =>
+                        !current
+                    )
+                  }
+                >
+                  <span>
+                    More
+                  </span>
 
-        {/* =================================================
-            NAVIGATION
-        ================================================= */}
+                  <span
+                    style={{
+                      marginLeft:
+                        "8px",
+                      fontSize:
+                        "12px",
+                    }}
+                  >
+                    {moreOpen
+                      ? "▲"
+                      : "▼"}
+                  </span>
+                </button>
 
-        <div className="navbar-links">
+                {moreOpen && (
+                  <div
+                    style={{
+                      display:
+                        "flex",
+                      flexDirection:
+                        "column",
+                      gap: "4px",
+                      marginLeft:
+                        "12px",
+                      marginTop:
+                        "-4px",
+                      marginBottom:
+                        "8px",
+                    }}
+                  >
+                    {visibleMoreItems.map(
+                      (item) => (
+                        <button
+                          key={
+                            item.key
+                          }
+                          type="button"
+                          className={
+                            activePage ===
+                            item.key
+                              ? "nav-button active"
+                              : "nav-button"
+                          }
+                          onClick={() =>
+                            handlePageChange(
+                              item
+                            )
+                          }
+                          style={{
+                            fontSize:
+                              "14px",
+                            paddingLeft:
+                              "28px",
+                          }}
+                        >
+                          {
+                            item.label
+                          }
+                        </button>
+                      )
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
-          {visibleNavItems.map((item) => (
+          <div className="user-section">
+            <span className="user-name">
+              {user.name}
+            </span>
+
+            <span className="user-role">
+              {getRoleLabel(
+                user.role
+              )}
+            </span>
+
             <button
-              key={item.key}
               type="button"
-              className={
-                activePage === item.key
-                  ? "nav-button active"
-                  : "nav-button"
-              }
-              onClick={() =>
-                handlePageChange(item)
+              className="logout-button"
+              onClick={
+                handleLogout
               }
             >
-              {item.label}
+              Logout
             </button>
-          ))}
+          </div>
+        </nav>
 
-        </div>
+        <main>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <Dashboard />
+              }
+            />
 
+            <Route
+              path="/events"
+              element={
+                <Events
+                  showToast={
+                    showToast
+                  }
+                />
+              }
+            />
 
-        {/* =================================================
-            USER
-        ================================================= */}
+            <Route
+              path="/tasks"
+              element={
+                <Tasks
+                  showToast={
+                    showToast
+                  }
+                />
+              }
+            />
 
-        <div className="user-section">
+            <Route
+              path="/deadlines"
+              element={
+                <Deadlines
+                  showToast={
+                    showToast
+                  }
+                />
+              }
+            />
 
-          <span className="user-name">
-            {user.name}
-          </span>
+            <Route
+              path="/volunteers"
+              element={
+                <Volunteers
+                  showToast={
+                    showToast
+                  }
+                />
+              }
+            />
 
-          <span className="user-role">
-            {getRoleLabel(user.role)}
-          </span>
+            <Route
+              path="/documents"
+              element={
+                <Documents />
+              }
+            />
 
-          <button
-            type="button"
-            className="logout-button"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+            <Route
+              path="/meetings"
+              element={
+                <Meetings />
+              }
+            />
 
-        </div>
+            <Route
+              path="/announcements"
+              element={
+                <Announcements />
+              }
+            />
 
-      </nav>
+            <Route
+              path="/about"
+              element={
+                <div className="page-container">
+                  <section className="content-section">
+                    <h1>About</h1>
+                    <p>
+                      About ClubOps AI
+                      will be added
+                      here.
+                    </p>
+                  </section>
+                </div>
+              }
+            />
 
+            <Route
+              path="/contact"
+              element={
+                <div className="page-container">
+                  <section className="content-section">
+                    <h1>Contact Us</h1>
+                    <p>
+                      Contact information
+                      will be added
+                      here.
+                    </p>
+                  </section>
+                </div>
+              }
+            />
 
-      {/* ===================================================
-          PAGE CONTENT
-      =================================================== */}
-
-      <main>
-
-        <Routes>
-
-          <Route
-            path="/dashboard"
-            element={<Dashboard />}
-          />
-
-          <Route
-            path="/events"
-            element={<Events />}
-          />
-
-          <Route
-            path="/tasks"
-            element={<Tasks />}
-          />
-
-          <Route
-            path="/deadlines"
-            element={<Deadlines />}
-          />
-
-          <Route
-            path="/volunteers"
-            element={<Volunteers />}
-          />
-
-          <Route
-            path="/documents"
-            element={<Documents />}
-          />
-
-          <Route
-            path="/meetings"
-            element={<Meetings />}
-          />
-
-          <Route
-            path="/announcements"
-            element={<Announcements />}
-          />
-
-          <Route
-            path="*"
-            element={
-              <Navigate
-                to="/dashboard"
-                replace
-              />
-            }
-          />
-
-        </Routes>
-
-      </main>
-
-    </div>
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to="/dashboard"
+                  replace
+                />
+              }
+            />
+          </Routes>
+        </main>
+      </div>
+    </>
   );
 }
 
-
-/* =========================================================
-   ROOT APP
-   ========================================================= */
-
 function App() {
+  const [user, setUser] =
+    useState(null);
 
-  const [user, setUser] = useState(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [loading, setLoading] = useState(true);
+  const [toast, setToast] =
+    useState({
+      message: "",
+      type: "success",
+    });
 
+  const showToast = (
+    message,
+    type = "success"
+  ) => {
+    setToast({
+      message,
+      type,
+    });
+  };
 
-  /* =======================================================
-     LOAD SESSION
-     ======================================================= */
+  const clearToast = () => {
+    setToast({
+      message: "",
+      type: "success",
+    });
+  };
 
   useEffect(() => {
-
     const savedUser =
-      localStorage.getItem("clubops_user");
+      localStorage.getItem(
+        "clubops_user"
+      );
 
     const token =
-      localStorage.getItem("clubops_token");
+      localStorage.getItem(
+        "clubops_token"
+      );
 
-
-    if (savedUser && token) {
-
+    if (
+      savedUser &&
+      token
+    ) {
       try {
-
         const parsedUser =
-          JSON.parse(savedUser);
+          JSON.parse(
+            savedUser
+          );
 
-        setUser(parsedUser);
-
+        setUser(
+          parsedUser
+        );
       } catch {
-
         localStorage.removeItem(
           "clubops_user"
         );
@@ -358,77 +598,54 @@ function App() {
         localStorage.removeItem(
           "clubops_token"
         );
-
       }
-
     }
 
     setLoading(false);
-
   }, []);
 
-
-  /* =======================================================
-     LOGIN
-     ======================================================= */
-
-  const handleLogin = (loggedInUser) => {
-
-    setUser(loggedInUser);
-
+  const handleLogin = (
+    loggedInUser
+  ) => {
+    setUser(
+      loggedInUser
+    );
   };
-
-
-  /* =======================================================
-     LOGOUT
-     ======================================================= */
 
   const handleLogout = () => {
-
     setUser(null);
-
   };
 
-
-  /* =======================================================
-     LOADING
-     ======================================================= */
-
   if (loading) {
-
     return (
       <div
         style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#f5f3ec",
-          color: "#285f50",
-          fontSize: "16px",
-          fontWeight: "600",
+          minHeight:
+            "100vh",
+          display:
+            "flex",
+          alignItems:
+            "center",
+          justifyContent:
+            "center",
+          background:
+            "#f5f3ec",
+          color:
+            "#285f50",
+          fontSize:
+            "16px",
+          fontWeight:
+            "600",
         }}
       >
         Loading ClubOps AI...
       </div>
     );
-
   }
-
-
-  /* =======================================================
-     APPLICATION ROUTER
-     ======================================================= */
 
   return (
     <BrowserRouter>
-
       <Routes>
-
-        {/* ================================================
-            LOGIN / AUTH
-        ================================================= */}
-
         <Route
           path="/"
           element={
@@ -439,34 +656,39 @@ function App() {
               />
             ) : (
               <Auth
-                onLogin={handleLogin}
+                onLogin={
+                  handleLogin
+                }
               />
             )
           }
         />
 
-
-        {/* ================================================
-            PROTECTED APPLICATION
-        ================================================= */}
-
         <Route
           path="/*"
           element={
-            <ProtectedRoute user={user}>
+            <ProtectedRoute
+              user={user}
+            >
               <ProtectedApp
                 user={user}
-                onLogout={handleLogout}
+                onLogout={
+                  handleLogout
+                }
+                toast={toast}
+                clearToast={
+                  clearToast
+                }
+                showToast={
+                  showToast
+                }
               />
             </ProtectedRoute>
           }
         />
-
       </Routes>
-
     </BrowserRouter>
   );
 }
-
 
 export default App;
