@@ -6,6 +6,7 @@ import {
   deleteMeeting,
   getEvents,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Meetings() {
   const [meetings, setMeetings] = useState([]);
@@ -28,12 +29,79 @@ function Meetings() {
 
   const [editingId, setEditingId] = useState(null);
 
+  /* =========================================================
+     USER / PERMISSIONS
+     ========================================================= */
+
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser
+      ? JSON.parse(savedUser)
+      : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  const canCreateMeeting = canPerformAction(
+    userRole,
+    "createMeeting"
+  );
+
+  const canEditMeeting = canPerformAction(
+    userRole,
+    "editMeeting"
+  );
+
+  const canDeleteMeeting = canPerformAction(
+    userRole,
+    "deleteMeeting"
+  );
+
+  const canManageMeetings =
+    canCreateMeeting || canEditMeeting;
+
+  /* =========================================================
+     THEME STYLES
+     ========================================================= */
+
+  const mintSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
+
+  const inputStyle = {
+    background: "rgba(255, 255, 255, 0.82)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.20)",
+    borderRadius: "12px",
+  };
+
+  const headingStyle = {
+    color: "#173f35",
+  };
+
+  /* =========================================================
+     LOAD MEETINGS
+     ========================================================= */
+
   const loadMeetings = async () => {
     try {
       setLoading(true);
       setError("");
 
       const data = await getMeetings();
+
       setMeetings(data.data || []);
     } catch (err) {
       setError(err.message);
@@ -42,9 +110,14 @@ function Meetings() {
     }
   };
 
+  /* =========================================================
+     LOAD EVENTS
+     ========================================================= */
+
   const loadEvents = async () => {
     try {
       const data = await getEvents();
+
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
@@ -56,6 +129,10 @@ function Meetings() {
     loadEvents();
   }, []);
 
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -64,6 +141,10 @@ function Meetings() {
       [name]: value,
     }));
   };
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setForm({
@@ -80,21 +161,54 @@ function Meetings() {
     setEditingId(null);
   };
 
+  /* =========================================================
+     CREATE / UPDATE MEETING
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (editingId && !canEditMeeting) {
+      setError(
+        "You do not have permission to edit meetings."
+      );
+
+      return;
+    }
+
+    if (!editingId && !canCreateMeeting) {
+      setError(
+        "You do not have permission to create meetings."
+      );
+
+      return;
+    }
 
     try {
       setError("");
       setSuccess("");
 
+      if (!form.date) {
+        setError(
+          "Please select a date and time."
+        );
+
+        return;
+      }
+
       const meetingData = {
         title: form.title,
-        eventId: form.eventId || undefined,
-        date: new Date(form.date).toISOString(),
+        eventId:
+          form.eventId || undefined,
+        date: new Date(
+          form.date
+        ).toISOString(),
         location: form.location,
         attendees: form.attendees
           .split(",")
-          .map((attendee) => attendee.trim())
+          .map((attendee) =>
+            attendee.trim()
+          )
           .filter(Boolean),
         notes: form.notes,
         transcript: form.transcript,
@@ -102,36 +216,67 @@ function Meetings() {
       };
 
       if (editingId) {
-        await updateMeeting(editingId, meetingData);
-        setSuccess("Meeting updated successfully.");
+        await updateMeeting(
+          editingId,
+          meetingData
+        );
+
+        setSuccess(
+          "Meeting updated successfully."
+        );
       } else {
-        await createMeeting(meetingData);
-        setSuccess("Meeting created successfully.");
+        await createMeeting(
+          meetingData
+        );
+
+        setSuccess(
+          "Meeting created successfully."
+        );
       }
 
       resetForm();
+
       await loadMeetings();
     } catch (err) {
       setError(err.message);
     }
   };
 
+  /* =========================================================
+     EDIT MEETING
+     ========================================================= */
+
   const handleEdit = (meeting) => {
+    if (!canEditMeeting) {
+      setError(
+        "You do not have permission to edit meetings."
+      );
+
+      return;
+    }
+
     setEditingId(meeting._id);
 
     setForm({
       title: meeting.title || "",
       eventId: meeting.eventId || "",
       date: meeting.date
-        ? new Date(meeting.date).toISOString().slice(0, 16)
+        ? new Date(meeting.date)
+            .toISOString()
+            .slice(0, 16)
         : "",
-      location: meeting.location || "",
-      attendees: Array.isArray(meeting.attendees)
+      location:
+        meeting.location || "",
+      attendees: Array.isArray(
+        meeting.attendees
+      )
         ? meeting.attendees.join(", ")
         : "",
       notes: meeting.notes || "",
-      transcript: meeting.transcript || "",
-      status: meeting.status || "Scheduled",
+      transcript:
+        meeting.transcript || "",
+      status:
+        meeting.status || "Scheduled",
     });
 
     setSuccess("");
@@ -143,7 +288,21 @@ function Meetings() {
     });
   };
 
-  const handleDelete = async (meetingId) => {
+  /* =========================================================
+     DELETE MEETING
+     ========================================================= */
+
+  const handleDelete = async (
+    meetingId
+  ) => {
+    if (!canDeleteMeeting) {
+      setError(
+        "You do not have permission to delete meetings."
+      );
+
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this meeting?"
     );
@@ -158,7 +317,9 @@ function Meetings() {
 
       await deleteMeeting(meetingId);
 
-      setSuccess("Meeting deleted successfully.");
+      setSuccess(
+        "Meeting deleted successfully."
+      );
 
       await loadMeetings();
     } catch (err) {
@@ -166,195 +327,365 @@ function Meetings() {
     }
   };
 
+  /* =========================================================
+     GET EVENT NAME
+     ========================================================= */
+
   const getEventName = (eventId) => {
     if (!eventId) {
       return "No event assigned";
     }
 
-    const event = events.find((item) => item._id === eventId);
+    const event = events.find(
+      (item) => item._id === eventId
+    );
 
-    return event ? event.title : "Event not found";
+    return event
+      ? event.title
+      : "Event not found";
   };
+
+  /* =========================================================
+     UI
+     ========================================================= */
 
   return (
     <div className="meetings-page">
+
       <header className="page-header">
+
         <div>
-          <p className="eyebrow">ClubOps AI</p>
-          <h1>Meetings</h1>
-          <p>Schedule and manage club meetings.</p>
+
+          <p className="eyebrow">
+            ClubOps AI
+          </p>
+
+          <h1>
+            Meetings
+          </h1>
+
+          <p>
+            Schedule and manage club meetings.
+          </p>
+
         </div>
+
       </header>
 
-      {error && <div className="error-message">{error}</div>}
+      {/* ERROR */}
 
-      {success && (
-        <div className="success-message">{success}</div>
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
       )}
 
-      <section className="event-form-section">
-        <h2>
-          {editingId ? "Edit Meeting" : "Create Meeting"}
-        </h2>
+      {/* SUCCESS */}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Meeting Title</label>
+      {success && (
+        <div className="success-message">
+          {success}
+        </div>
+      )}
 
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter meeting title"
-              required
-            />
-          </div>
+      {/* =====================================================
+          CREATE / EDIT MEETING
+      ===================================================== */}
 
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="eventId">Event</label>
+      {canManageMeetings && (
+        <section
+          className="event-form-section"
+          style={mintSectionStyle}
+        >
 
-              <select
-                id="eventId"
-                name="eventId"
-                value={form.eventId}
-                onChange={handleChange}
-              >
-                <option value="">No event</option>
+          <h2 style={headingStyle}>
+            {editingId
+              ? "Edit Meeting"
+              : "Create Meeting"}
+          </h2>
 
-                {events.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <form onSubmit={handleSubmit}>
+
+            {/* TITLE */}
 
             <div className="form-group">
-              <label htmlFor="date">Date and Time</label>
+
+              <label htmlFor="title">
+                Meeting Title
+              </label>
 
               <input
-                id="date"
-                name="date"
-                type="datetime-local"
-                value={form.date}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="location">Location</label>
-
-              <input
-                id="location"
-                name="location"
+                id="title"
+                name="title"
                 type="text"
-                value={form.location}
+                value={form.title}
                 onChange={handleChange}
-                placeholder="Enter meeting location"
+                placeholder="Enter meeting title"
+                required
+                style={inputStyle}
               />
+
             </div>
+
+            {/* EVENT + DATE */}
+
+            <div className="form-row">
+
+              <div className="form-group">
+
+                <label htmlFor="eventId">
+                  Event
+                </label>
+
+                <select
+                  id="eventId"
+                  name="eventId"
+                  value={form.eventId}
+                  onChange={handleChange}
+                  style={inputStyle}
+                >
+
+                  <option value="">
+                    No event
+                  </option>
+
+                  {events.map((event) => (
+                    <option
+                      key={event._id}
+                      value={event._id}
+                    >
+                      {event.title}
+                    </option>
+                  ))}
+
+                </select>
+
+              </div>
+
+              <div className="form-group">
+
+                <label htmlFor="date">
+                  Date and Time
+                </label>
+
+                <input
+                  id="date"
+                  name="date"
+                  type="datetime-local"
+                  value={form.date}
+                  onChange={handleChange}
+                  required
+                  style={inputStyle}
+                />
+
+              </div>
+
+            </div>
+
+            {/* LOCATION + STATUS */}
+
+            <div className="form-row">
+
+              <div className="form-group">
+
+                <label htmlFor="location">
+                  Location
+                </label>
+
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={form.location}
+                  onChange={handleChange}
+                  placeholder="Enter meeting location"
+                  style={inputStyle}
+                />
+
+              </div>
+
+              <div className="form-group">
+
+                <label htmlFor="status">
+                  Status
+                </label>
+
+                <select
+                  id="status"
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                  style={inputStyle}
+                >
+
+                  <option value="Scheduled">
+                    Scheduled
+                  </option>
+
+                  <option value="Completed">
+                    Completed
+                  </option>
+
+                  <option value="Cancelled">
+                    Cancelled
+                  </option>
+
+                </select>
+
+              </div>
+
+            </div>
+
+            {/* ATTENDEES */}
 
             <div className="form-group">
-              <label htmlFor="status">Status</label>
 
-              <select
-                id="status"
-                name="status"
-                value={form.status}
+              <label htmlFor="attendees">
+                Attendees
+              </label>
+
+              <input
+                id="attendees"
+                name="attendees"
+                type="text"
+                value={form.attendees}
                 onChange={handleChange}
-              >
-                <option value="Scheduled">Scheduled</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+                placeholder="Enter names separated by commas"
+                style={inputStyle}
+              />
+
             </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="attendees">
-              Attendees
-            </label>
+            {/* NOTES */}
 
-            <input
-              id="attendees"
-              name="attendees"
-              type="text"
-              value={form.attendees}
-              onChange={handleChange}
-              placeholder="Enter names separated by commas"
-            />
-          </div>
+            <div className="form-group">
 
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
+              <label htmlFor="notes">
+                Notes
+              </label>
 
-            <textarea
-              id="notes"
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              placeholder="Enter meeting notes"
-              rows="4"
-            />
-          </div>
+              <textarea
+                id="notes"
+                name="notes"
+                value={form.notes}
+                onChange={handleChange}
+                placeholder="Enter meeting notes"
+                rows="4"
+                style={inputStyle}
+              />
 
-          <div className="form-group">
-            <label htmlFor="transcript">Transcript</label>
+            </div>
 
-            <textarea
-              id="transcript"
-              name="transcript"
-              value={form.transcript}
-              onChange={handleChange}
-              placeholder="Enter meeting transcript"
-              rows="6"
-            />
-          </div>
+            {/* TRANSCRIPT */}
 
-          <div className="form-actions">
-            <button type="submit">
-              {editingId ? "Update Meeting" : "Create Meeting"}
-            </button>
+            <div className="form-group">
 
-            {editingId && (
-              <button type="button" onClick={resetForm}>
-                Cancel
+              <label htmlFor="transcript">
+                Transcript
+              </label>
+
+              <textarea
+                id="transcript"
+                name="transcript"
+                value={form.transcript}
+                onChange={handleChange}
+                placeholder="Enter meeting transcript"
+                rows="6"
+                style={inputStyle}
+              />
+
+            </div>
+
+            {/* BUTTONS */}
+
+            <div className="form-actions">
+
+              <button type="submit">
+                {editingId
+                  ? "Update Meeting"
+                  : "Create Meeting"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
 
-      <section className="events-section">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+              )}
+
+            </div>
+
+          </form>
+
+        </section>
+      )}
+
+      {/* VIEW ONLY */}
+
+      {!canManageMeetings && (
+        <div className="empty-state">
+          You can view meetings, but you do not
+          have permission to create or edit them.
+        </div>
+      )}
+
+      {/* =====================================================
+          ALL MEETINGS
+      ===================================================== */}
+
+      <section
+        className="events-section"
+        style={mintSectionStyle}
+      >
+
         <div className="section-heading">
-          <h2>All Meetings</h2>
 
-          <button type="button" onClick={loadMeetings}>
+          <h2>
+            All Meetings
+          </h2>
+
+          <button
+            type="button"
+            onClick={loadMeetings}
+          >
             Refresh
           </button>
+
         </div>
 
         {loading ? (
-          <p>Loading meetings...</p>
+
+          <p>
+            Loading meetings...
+          </p>
+
         ) : meetings.length === 0 ? (
-          <p>No meetings found.</p>
+
+          <p>
+            No meetings found.
+          </p>
+
         ) : (
+
           <div className="events-list">
+
             {meetings.map((meeting) => (
+
               <article
                 className="event-card"
                 key={meeting._id}
               >
+
                 <div className="event-card-content">
-                  <h3>{meeting.title}</h3>
+
+                  <h3>
+                    {meeting.title}
+                  </h3>
 
                   <div className="event-details">
+
                     <span>
                       Date:{" "}
                       {meeting.date
@@ -365,7 +696,10 @@ function Meetings() {
                     </span>
 
                     <span>
-                      Event: {getEventName(meeting.eventId)}
+                      Event:{" "}
+                      {getEventName(
+                        meeting.eventId
+                      )}
                     </span>
 
                     <span>
@@ -375,54 +709,86 @@ function Meetings() {
                     </span>
 
                     <span>
-                      Status: {meeting.status}
+                      Status:{" "}
+                      {meeting.status}
                     </span>
 
                     <span>
                       Attendees:{" "}
                       {meeting.attendees?.length
-                        ? meeting.attendees.join(", ")
+                        ? meeting.attendees.join(
+                            ", "
+                          )
                         : "None listed"}
                     </span>
+
                   </div>
 
                   {meeting.notes && (
                     <p>
-                      <strong>Notes:</strong>{" "}
+                      <strong>
+                        Notes:
+                      </strong>{" "}
                       {meeting.notes}
                     </p>
                   )}
 
                   {meeting.transcript && (
                     <p>
-                      <strong>Transcript:</strong>{" "}
+                      <strong>
+                        Transcript:
+                      </strong>{" "}
                       {meeting.transcript}
                     </p>
                   )}
+
                 </div>
 
-                <div className="event-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(meeting)}
-                  >
-                    Edit
-                  </button>
+                {(canEditMeeting ||
+                  canDeleteMeeting) && (
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleDelete(meeting._id)
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
+                  <div className="event-actions">
+
+                    {canEditMeeting && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(
+                            meeting
+                          )
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
+
+                    {canDeleteMeeting && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(
+                            meeting._id
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+
+                  </div>
+
+                )}
+
               </article>
+
             ))}
+
           </div>
+
         )}
+
       </section>
+
     </div>
   );
 }
