@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
 import Tasks from "./pages/Tasks";
@@ -8,22 +9,35 @@ import Documents from "./pages/Documents";
 import Meetings from "./pages/Meetings";
 import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
+
+import AIAssistant from "./components/AIAssistant";
+
 import "./App.css";
 
 function App() {
-  const [activePage, setActivePage] = useState("dashboard");
+  const [activePage, setActivePage] =
+    useState("dashboard");
+
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("clubops_user");
-    const token = localStorage.getItem("clubops_token");
+    const savedUser =
+      localStorage.getItem("clubops_user");
+
+    const token =
+      localStorage.getItem("clubops_token");
 
     if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
-        localStorage.removeItem("clubops_user");
-        localStorage.removeItem("clubops_token");
+        localStorage.removeItem(
+          "clubops_user"
+        );
+
+        localStorage.removeItem(
+          "clubops_token"
+        );
       }
     }
   }, []);
@@ -73,14 +87,21 @@ function App() {
   };
 
   if (!user) {
-    return <Auth onLogin={handleLogin} />;
+    return (
+      <Auth
+        onLogin={handleLogin}
+      />
+    );
   }
 
   return (
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand">
-          <span className="brand-name">ClubOps AI</span>
+          <span className="brand-name">
+            ClubOps AI
+          </span>
+
           <span className="brand-subtitle">
             Club Operations
           </span>
@@ -94,7 +115,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("dashboard")}
+            onClick={() =>
+              setActivePage("dashboard")
+            }
           >
             Dashboard
           </button>
@@ -106,7 +129,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("events")}
+            onClick={() =>
+              setActivePage("events")
+            }
           >
             Events
           </button>
@@ -118,7 +143,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("tasks")}
+            onClick={() =>
+              setActivePage("tasks")
+            }
           >
             Tasks
           </button>
@@ -130,7 +157,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("deadlines")}
+            onClick={() =>
+              setActivePage("deadlines")
+            }
           >
             Deadlines
           </button>
@@ -142,7 +171,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("volunteers")}
+            onClick={() =>
+              setActivePage("volunteers")
+            }
           >
             Volunteers
           </button>
@@ -154,7 +185,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("documents")}
+            onClick={() =>
+              setActivePage("documents")
+            }
           >
             Documents
           </button>
@@ -166,7 +199,9 @@ function App() {
                 ? "nav-button active"
                 : "nav-button"
             }
-            onClick={() => setActivePage("meetings")}
+            onClick={() =>
+              setActivePage("meetings")
+            }
           >
             Meetings
           </button>
@@ -179,7 +214,9 @@ function App() {
                 : "nav-button"
             }
             onClick={() =>
-              setActivePage("announcements")
+              setActivePage(
+                "announcements"
+              )
             }
           >
             Announcements
@@ -205,7 +242,17 @@ function App() {
         </div>
       </nav>
 
-      <main>{renderPage()}</main>
+      <main>
+        {renderPage()}
+      </main>
+
+      <div className="ticks"></div>
+
+      <section id="spacer"></section>
+
+      <div>
+        <AIAssistant />
+      </div>
     </div>
   );
 }
