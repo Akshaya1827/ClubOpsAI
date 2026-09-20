@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
   BrowserRouter,
   Navigate,
@@ -19,6 +20,7 @@ import Meetings from "./pages/Meetings";
 import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
 
+import AIAssistant from "./components/AIAssistant";
 import Toast from "./components/Toast";
 
 import {
@@ -56,6 +58,11 @@ const MORE_ITEMS = [
     key: "deadlines",
     label: "Deadlines",
     path: "/deadlines",
+  },
+  {
+    key: "volunteers",
+    label: "Volunteers",
+    path: "/volunteers",
   },
   {
     key: "documents",
@@ -249,23 +256,6 @@ function ProtectedApp({
               </button>
             ))}
 
-            {FUTURE_ITEMS.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={
-                  activePage === item.key
-                    ? "nav-button active"
-                    : "nav-button"
-                }
-                onClick={() =>
-                  handleFuturePage(item.path)
-                }
-              >
-                {item.label}
-              </button>
-            ))}
-
             {visibleMoreItems.length > 0 && (
               <>
                 <button
@@ -328,6 +318,23 @@ function ProtectedApp({
                 )}
               </>
             )}
+
+            {FUTURE_ITEMS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={
+                  activePage === item.key
+                    ? "nav-button active"
+                    : "nav-button"
+                }
+                onClick={() =>
+                  handleFuturePage(item.path)
+                }
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
 
           <div className="user-section">
@@ -455,6 +462,9 @@ function ProtectedApp({
             />
           </Routes>
         </main>
+
+        {/* AI Assistant from main branch */}
+        <AIAssistant />
       </div>
     </>
   );
