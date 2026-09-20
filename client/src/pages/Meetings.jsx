@@ -6,6 +6,7 @@ import {
   deleteMeeting,
   getEvents,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Meetings() {
   const [meetings, setMeetings] = useState([]);
@@ -28,12 +29,45 @@ function Meetings() {
 
   const [editingId, setEditingId] = useState(null);
 
+  // Get logged-in user's role
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  // Role permissions
+  const canCreateMeeting = canPerformAction(
+    userRole,
+    "createMeeting"
+  );
+
+  const canEditMeeting = canPerformAction(
+    userRole,
+    "editMeeting"
+  );
+
+  const canDeleteMeeting = canPerformAction(
+    userRole,
+    "deleteMeeting"
+  );
+
+  const canManageMeetings =
+    canCreateMeeting || canEditMeeting;
+
   const loadMeetings = async () => {
     try {
       setLoading(true);
       setError("");
 
       const data = await getMeetings();
+
       setMeetings(data.data || []);
     } catch (err) {
       setError(err.message);
@@ -45,6 +79,7 @@ function Meetings() {
   const loadEvents = async () => {
     try {
       const data = await getEvents();
+
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
@@ -83,9 +118,28 @@ function Meetings() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (editingId && !canEditMeeting) {
+      setError(
+        "You do not have permission to edit meetings."
+      );
+      return;
+    }
+
+    if (!editingId && !canCreateMeeting) {
+      setError(
+        "You do not have permission to create meetings."
+      );
+      return;
+    }
+
     try {
       setError("");
       setSuccess("");
+
+      if (!form.date) {
+        setError("Please select a date and time.");
+        return;
+      }
 
       const meetingData = {
         title: form.title,
@@ -102,11 +156,20 @@ function Meetings() {
       };
 
       if (editingId) {
-        await updateMeeting(editingId, meetingData);
-        setSuccess("Meeting updated successfully.");
+        await updateMeeting(
+          editingId,
+          meetingData
+        );
+
+        setSuccess(
+          "Meeting updated successfully."
+        );
       } else {
         await createMeeting(meetingData);
-        setSuccess("Meeting created successfully.");
+
+        setSuccess(
+          "Meeting created successfully."
+        );
       }
 
       resetForm();
@@ -117,13 +180,22 @@ function Meetings() {
   };
 
   const handleEdit = (meeting) => {
+    if (!canEditMeeting) {
+      setError(
+        "You do not have permission to edit meetings."
+      );
+      return;
+    }
+
     setEditingId(meeting._id);
 
     setForm({
       title: meeting.title || "",
       eventId: meeting.eventId || "",
       date: meeting.date
-        ? new Date(meeting.date).toISOString().slice(0, 16)
+        ? new Date(meeting.date)
+            .toISOString()
+            .slice(0, 16)
         : "",
       location: meeting.location || "",
       attendees: Array.isArray(meeting.attendees)
@@ -144,6 +216,13 @@ function Meetings() {
   };
 
   const handleDelete = async (meetingId) => {
+    if (!canDeleteMeeting) {
+      setError(
+        "You do not have permission to delete meetings."
+      );
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this meeting?"
     );
@@ -158,7 +237,9 @@ function Meetings() {
 
       await deleteMeeting(meetingId);
 
-      setSuccess("Meeting deleted successfully.");
+      setSuccess(
+        "Meeting deleted successfully."
+      );
 
       await loadMeetings();
     } catch (err) {
@@ -171,9 +252,13 @@ function Meetings() {
       return "No event assigned";
     }
 
-    const event = events.find((item) => item._id === eventId);
+    const event = events.find(
+      (item) => item._id === eventId
+    );
 
-    return event ? event.title : "Event not found";
+    return event
+      ? event.title
+      : "Event not found";
   };
 
   return (
@@ -181,161 +266,218 @@ function Meetings() {
       <header className="page-header">
         <div>
           <p className="eyebrow">ClubOps AI</p>
+
           <h1>Meetings</h1>
-          <p>Schedule and manage club meetings.</p>
+
+          <p>
+            Schedule and manage club meetings.
+          </p>
         </div>
       </header>
 
-      {error && <div className="error-message">{error}</div>}
-
-      {success && (
-        <div className="success-message">{success}</div>
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
       )}
 
-      <section className="event-form-section">
-        <h2>
-          {editingId ? "Edit Meeting" : "Create Meeting"}
-        </h2>
+      {success && (
+        <div className="success-message">
+          {success}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Meeting Title</label>
+      {/* Create / Edit form */}
+      {canManageMeetings && (
+        <section className="event-form-section">
+          <h2>
+            {editingId
+              ? "Edit Meeting"
+              : "Create Meeting"}
+          </h2>
 
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter meeting title"
-              required
-            />
-          </div>
-
-          <div className="form-row">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="eventId">Event</label>
-
-              <select
-                id="eventId"
-                name="eventId"
-                value={form.eventId}
-                onChange={handleChange}
-              >
-                <option value="">No event</option>
-
-                {events.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="date">Date and Time</label>
+              <label htmlFor="title">
+                Meeting Title
+              </label>
 
               <input
-                id="date"
-                name="date"
-                type="datetime-local"
-                value={form.date}
+                id="title"
+                name="title"
+                type="text"
+                value={form.title}
                 onChange={handleChange}
+                placeholder="Enter meeting title"
                 required
               />
             </div>
-          </div>
 
-          <div className="form-row">
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="eventId">
+                  Event
+                </label>
+
+                <select
+                  id="eventId"
+                  name="eventId"
+                  value={form.eventId}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    No event
+                  </option>
+
+                  {events.map((event) => (
+                    <option
+                      key={event._id}
+                      value={event._id}
+                    >
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="date">
+                  Date and Time
+                </label>
+
+                <input
+                  id="date"
+                  name="date"
+                  type="datetime-local"
+                  value={form.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="location">
+                  Location
+                </label>
+
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={form.location}
+                  onChange={handleChange}
+                  placeholder="Enter meeting location"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="status">
+                  Status
+                </label>
+
+                <select
+                  id="status"
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+                  <option value="Scheduled">
+                    Scheduled
+                  </option>
+
+                  <option value="Completed">
+                    Completed
+                  </option>
+
+                  <option value="Cancelled">
+                    Cancelled
+                  </option>
+                </select>
+              </div>
+            </div>
+
             <div className="form-group">
-              <label htmlFor="location">Location</label>
+              <label htmlFor="attendees">
+                Attendees
+              </label>
 
               <input
-                id="location"
-                name="location"
+                id="attendees"
+                name="attendees"
                 type="text"
-                value={form.location}
+                value={form.attendees}
                 onChange={handleChange}
-                placeholder="Enter meeting location"
+                placeholder="Enter names separated by commas"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="status">Status</label>
+              <label htmlFor="notes">
+                Notes
+              </label>
 
-              <select
-                id="status"
-                name="status"
-                value={form.status}
+              <textarea
+                id="notes"
+                name="notes"
+                value={form.notes}
                 onChange={handleChange}
-              >
-                <option value="Scheduled">Scheduled</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+                placeholder="Enter meeting notes"
+                rows="4"
+              />
             </div>
-          </div>
 
-          <div className="form-group">
-            <label htmlFor="attendees">
-              Attendees
-            </label>
+            <div className="form-group">
+              <label htmlFor="transcript">
+                Transcript
+              </label>
 
-            <input
-              id="attendees"
-              name="attendees"
-              type="text"
-              value={form.attendees}
-              onChange={handleChange}
-              placeholder="Enter names separated by commas"
-            />
-          </div>
+              <textarea
+                id="transcript"
+                name="transcript"
+                value={form.transcript}
+                onChange={handleChange}
+                placeholder="Enter meeting transcript"
+                rows="6"
+              />
+            </div>
 
-          <div className="form-group">
-            <label htmlFor="notes">Notes</label>
-
-            <textarea
-              id="notes"
-              name="notes"
-              value={form.notes}
-              onChange={handleChange}
-              placeholder="Enter meeting notes"
-              rows="4"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="transcript">Transcript</label>
-
-            <textarea
-              id="transcript"
-              name="transcript"
-              value={form.transcript}
-              onChange={handleChange}
-              placeholder="Enter meeting transcript"
-              rows="6"
-            />
-          </div>
-
-          <div className="form-actions">
-            <button type="submit">
-              {editingId ? "Update Meeting" : "Create Meeting"}
-            </button>
-
-            {editingId && (
-              <button type="button" onClick={resetForm}>
-                Cancel
+            <div className="form-actions">
+              <button type="submit">
+                {editingId
+                  ? "Update Meeting"
+                  : "Create Meeting"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
+
+      {!canManageMeetings && (
+        <div className="empty-state">
+          You can view meetings, but you do not have
+          permission to create or edit them.
+        </div>
+      )}
 
       <section className="events-section">
         <div className="section-heading">
           <h2>All Meetings</h2>
 
-          <button type="button" onClick={loadMeetings}>
+          <button
+            type="button"
+            onClick={loadMeetings}
+          >
             Refresh
           </button>
         </div>
@@ -365,7 +507,10 @@ function Meetings() {
                     </span>
 
                     <span>
-                      Event: {getEventName(meeting.eventId)}
+                      Event:{" "}
+                      {getEventName(
+                        meeting.eventId
+                      )}
                     </span>
 
                     <span>
@@ -401,23 +546,34 @@ function Meetings() {
                   )}
                 </div>
 
-                <div className="event-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(meeting)}
-                  >
-                    Edit
-                  </button>
+                {(canEditMeeting ||
+                  canDeleteMeeting) && (
+                  <div className="event-actions">
+                    {canEditMeeting && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(meeting)
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleDelete(meeting._id)
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
+                    {canDeleteMeeting && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(
+                            meeting._id
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>

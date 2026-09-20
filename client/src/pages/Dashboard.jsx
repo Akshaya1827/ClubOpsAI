@@ -75,22 +75,25 @@ function Dashboard() {
         "tasks",
       ]);
 
-      const deadlines = getArrayFromResponse(deadlinesData, [
-        "tasks",
-        "deadlines",
-      ]);
+      const deadlines = getArrayFromResponse(
+        deadlinesData,
+        ["tasks", "deadlines"]
+      );
 
-      const volunteers = getArrayFromResponse(volunteersData, [
-        "volunteers",
-      ]);
+      const volunteers = getArrayFromResponse(
+        volunteersData,
+        ["volunteers"]
+      );
 
-      const documents = getArrayFromResponse(documentsData, [
-        "documents",
-      ]);
+      const documents = getArrayFromResponse(
+        documentsData,
+        ["documents"]
+      );
 
-      const meetings = getArrayFromResponse(meetingsData, [
-        "meetings",
-      ]);
+      const meetings = getArrayFromResponse(
+        meetingsData,
+        ["meetings"]
+      );
 
       const announcements = getArrayFromResponse(
         announcementsData,
@@ -149,25 +152,21 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="events-page">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">ClubOps AI</p>
+    <div className="dashboard-page">
+      <header className="dashboard-header">
+        <p className="dashboard-eyebrow">
+          ClubOps AI · Overview
+        </p>
 
-          <h1>Dashboard</h1>
+        <h1 className="dashboard-title">
+          Club Operations
+        </h1>
 
-          <p>
-            Get a quick overview of your club's
-            operations.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={loadDashboard}
-        >
-          Refresh
-        </button>
+        <p className="dashboard-subtitle">
+          Your central workspace for events, tasks,
+          deadlines, volunteers, meetings and club
+          documents.
+        </p>
       </header>
 
       {error && (
@@ -177,97 +176,242 @@ function Dashboard() {
       )}
 
       {loading ? (
-        <p>Loading dashboard...</p>
+        <div className="dashboard-empty">
+          Loading your club overview...
+        </div>
       ) : (
         <>
-          <section className="events-section">
-            <div className="section-heading">
-              <h2>Club Overview</h2>
+          {/* HERO */}
+
+          <section className="dashboard-hero">
+            <div className="dashboard-hero-badge">
+              AI-powered operations hub
             </div>
 
-            <div className="dashboard-stats">
-              <div className="dashboard-stat-card">
-                <span>Events</span>
-                <strong>{stats.events}</strong>
-              </div>
+            <h2>
+              Good morning,{" "}
+              {localStorage.getItem("clubops_user")
+                ? JSON.parse(
+                    localStorage.getItem("clubops_user")
+                  ).name
+                : "there"}
+            </h2>
 
-              <div className="dashboard-stat-card">
-                <span>Tasks</span>
-                <strong>{stats.tasks}</strong>
-              </div>
+            <p>
+              Your club currently has{" "}
+              <strong>{stats.events}</strong> events,
+              <strong> {stats.tasks}</strong> tasks,
+              and{" "}
+              <strong>{stats.deadlines}</strong>{" "}
+              upcoming deadlines.
+            </p>
+          </section>
 
-              <div className="dashboard-stat-card">
-                <span>Upcoming Deadlines</span>
-                <strong>{stats.deadlines}</strong>
-              </div>
+          {/* STAT CARDS */}
 
-              <div className="dashboard-stat-card">
-                <span>Volunteers</span>
-                <strong>{stats.volunteers}</strong>
-              </div>
+          <section className="dashboard-stats">
+            <div className="dashboard-stat-card">
+              <span className="dashboard-stat-label">
+                Upcoming events
+              </span>
 
-              <div className="dashboard-stat-card">
-                <span>Documents</span>
-                <strong>{stats.documents}</strong>
-              </div>
+              <span className="dashboard-stat-value">
+                {stats.events}
+              </span>
 
-              <div className="dashboard-stat-card">
-                <span>Meetings</span>
-                <strong>{stats.meetings}</strong>
-              </div>
+              <span className="dashboard-stat-description">
+                {upcomingEvents.length > 0
+                  ? `Next: ${upcomingEvents[0].title}`
+                  : "No upcoming events"}
+              </span>
 
-              <div className="dashboard-stat-card">
-                <span>Announcements</span>
-                <strong>
-                  {stats.announcements}
-                </strong>
+              <div className="dashboard-stat-icon green">
+                📅
+              </div>
+            </div>
+
+            <div className="dashboard-stat-card">
+              <span className="dashboard-stat-label">
+                Active tasks
+              </span>
+
+              <span className="dashboard-stat-value">
+                {stats.tasks}
+              </span>
+
+              <span className="dashboard-stat-description">
+                Tasks currently in your club
+              </span>
+
+              <div className="dashboard-stat-icon blue">
+                ✓
+              </div>
+            </div>
+
+            <div className="dashboard-stat-card">
+              <span className="dashboard-stat-label">
+                Volunteers
+              </span>
+
+              <span className="dashboard-stat-value">
+                {stats.volunteers}
+              </span>
+
+              <span className="dashboard-stat-description">
+                Volunteers registered
+              </span>
+
+              <div className="dashboard-stat-icon amber">
+                ♧
+              </div>
+            </div>
+
+            <div className="dashboard-stat-card">
+              <span className="dashboard-stat-label">
+                Urgent deadlines
+              </span>
+
+              <span className="dashboard-stat-value">
+                {stats.deadlines}
+              </span>
+
+              <span className="dashboard-stat-description">
+                Upcoming action items
+              </span>
+
+              <div className="dashboard-stat-icon red">
+                !
               </div>
             </div>
           </section>
 
-          <section className="events-section">
-            <div className="section-heading">
-              <h2>Upcoming Events</h2>
+          {/* CURRENT OPERATIONS */}
+
+          <section className="dashboard-section">
+            <div className="dashboard-section-header">
+              <div>
+                <h2>What you have now</h2>
+
+                <p>
+                  A quick view of the club's current
+                  operations.
+                </p>
+              </div>
+            </div>
+
+            <div className="dashboard-stats">
+              <div className="dashboard-stat-card">
+                <span className="dashboard-stat-label">
+                  Documents
+                </span>
+
+                <span className="dashboard-stat-value">
+                  {stats.documents}
+                </span>
+
+                <span className="dashboard-stat-description">
+                  Club documents
+                </span>
+
+                <div className="dashboard-stat-icon green">
+                  ▣
+                </div>
+              </div>
+
+              <div className="dashboard-stat-card">
+                <span className="dashboard-stat-label">
+                  Meetings
+                </span>
+
+                <span className="dashboard-stat-value">
+                  {stats.meetings}
+                </span>
+
+                <span className="dashboard-stat-description">
+                  Scheduled meetings
+                </span>
+
+                <div className="dashboard-stat-icon blue">
+                  ◷
+                </div>
+              </div>
+
+              <div className="dashboard-stat-card">
+                <span className="dashboard-stat-label">
+                  Announcements
+                </span>
+
+                <span className="dashboard-stat-value">
+                  {stats.announcements}
+                </span>
+
+                <span className="dashboard-stat-description">
+                  Club announcements
+                </span>
+
+                <div className="dashboard-stat-icon amber">
+                  ✦
+                </div>
+              </div>
+
+              <div className="dashboard-stat-card">
+                <span className="dashboard-stat-label">
+                  Deadlines
+                </span>
+
+                <span className="dashboard-stat-value">
+                  {stats.deadlines}
+                </span>
+
+                <span className="dashboard-stat-description">
+                  Upcoming deadlines
+                </span>
+
+                <div className="dashboard-stat-icon red">
+                  !
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* UPCOMING EVENTS */}
+
+          <section className="dashboard-section">
+            <div className="dashboard-section-header">
+              <div>
+                <h2>Upcoming Events</h2>
+
+                <p>
+                  The next events scheduled for your
+                  club.
+                </p>
+              </div>
             </div>
 
             {upcomingEvents.length === 0 ? (
-              <p>No upcoming events.</p>
+              <div className="dashboard-empty">
+                No upcoming events.
+              </div>
             ) : (
-              <div className="events-list">
+              <div className="dashboard-list">
                 {upcomingEvents.map((event) => (
                   <article
-                    className="event-card"
+                    className="dashboard-list-card"
                     key={event._id}
                   >
-                    <div className="event-card-content">
-                      <div>
-                        <h3>{event.title}</h3>
+                    <div>
+                      <h3>{event.title}</h3>
 
-                        <p>
-                          {event.description ||
-                            "No description available."}
-                        </p>
-                      </div>
+                      <p>
+                        {event.location ||
+                          "Location not specified"}
+                      </p>
+                    </div>
 
-                      <div className="event-details">
-                        <p>
-                          <strong>Date:</strong>{" "}
-                          {new Date(
-                            event.date
-                          ).toLocaleString()}
-                        </p>
-
-                        <p>
-                          <strong>Location:</strong>{" "}
-                          {event.location ||
-                            "Not specified"}
-                        </p>
-
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          {event.status}
-                        </p>
-                      </div>
+                    <div className="dashboard-list-meta">
+                      {new Date(
+                        event.date
+                      ).toLocaleString()}
                     </div>
                   </article>
                 ))}
@@ -275,48 +419,43 @@ function Dashboard() {
             )}
           </section>
 
-          <section className="events-section">
-            <div className="section-heading">
-              <h2>Upcoming Meetings</h2>
+          {/* UPCOMING MEETINGS */}
+
+          <section className="dashboard-section">
+            <div className="dashboard-section-header">
+              <div>
+                <h2>Upcoming Meetings</h2>
+
+                <p>
+                  Meetings scheduled for your club.
+                </p>
+              </div>
             </div>
 
             {upcomingMeetings.length === 0 ? (
-              <p>No upcoming meetings.</p>
+              <div className="dashboard-empty">
+                No upcoming meetings.
+              </div>
             ) : (
-              <div className="events-list">
+              <div className="dashboard-list">
                 {upcomingMeetings.map((meeting) => (
                   <article
-                    className="event-card"
+                    className="dashboard-list-card"
                     key={meeting._id}
                   >
-                    <div className="event-card-content">
-                      <div>
-                        <h3>{meeting.title}</h3>
+                    <div>
+                      <h3>{meeting.title}</h3>
 
-                        <p>
-                          {meeting.location ||
-                            "Location not specified"}
-                        </p>
-                      </div>
+                      <p>
+                        {meeting.location ||
+                          "Location not specified"}
+                      </p>
+                    </div>
 
-                      <div className="event-details">
-                        <p>
-                          <strong>Date:</strong>{" "}
-                          {new Date(
-                            meeting.date
-                          ).toLocaleString()}
-                        </p>
-
-                        <p>
-                          <strong>Status:</strong>{" "}
-                          {meeting.status}
-                        </p>
-
-                        <p>
-                          <strong>Attendees:</strong>{" "}
-                          {meeting.attendees?.length || 0}
-                        </p>
-                      </div>
+                    <div className="dashboard-list-meta">
+                      {new Date(
+                        meeting.date
+                      ).toLocaleString()}
                     </div>
                   </article>
                 ))}

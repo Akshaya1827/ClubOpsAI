@@ -5,6 +5,7 @@ import {
   updateEvent,
   deleteEvent,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Events() {
   const [events, setEvents] = useState([]);
@@ -20,13 +21,43 @@ function Events() {
 
   const [editingId, setEditingId] = useState(null);
 
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  const canCreateEvent = canPerformAction(
+    userRole,
+    "createEvent"
+  );
+
+  const canEditEvent = canPerformAction(
+    userRole,
+    "editEvent"
+  );
+
+  const canDeleteEvent = canPerformAction(
+    userRole,
+    "deleteEvent"
+  );
+
+  const canManageEvents =
+    canCreateEvent || canEditEvent;
+
   const loadEvents = async () => {
     try {
       setLoading(true);
       setError("");
 
       const data = await getEvents();
-      setEvents(data.events);
+      setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -61,8 +92,27 @@ function Events() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (editingId && !canEditEvent) {
+      setError(
+        "You do not have permission to edit events."
+      );
+      return;
+    }
+
+    if (!editingId && !canCreateEvent) {
+      setError(
+        "You do not have permission to create events."
+      );
+      return;
+    }
+
     try {
       setError("");
+
+      if (!form.date) {
+        setError("Please select a date and time.");
+        return;
+      }
 
       const eventData = {
         title: form.title,
@@ -85,19 +135,40 @@ function Events() {
   };
 
   const handleEdit = (event) => {
+    if (!canEditEvent) {
+      setError(
+        "You do not have permission to edit events."
+      );
+      return;
+    }
+
     setEditingId(event._id);
 
     setForm({
       title: event.title || "",
       description: event.description || "",
       date: event.date
-        ? new Date(event.date).toISOString().slice(0, 16)
+        ? new Date(event.date)
+            .toISOString()
+            .slice(0, 16)
         : "",
       location: event.location || "",
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
     });
   };
 
   const handleDelete = async (eventId) => {
+    if (!canDeleteEvent) {
+      setError(
+        "You do not have permission to delete events."
+      );
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this event?"
     );
@@ -126,81 +197,117 @@ function Events() {
         </div>
       </header>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
-      <section className="event-form-section">
-        <h2>{editingId ? "Edit Event" : "Create Event"}</h2>
+      {canManageEvents && (
+        <section className="event-form-section">
+          <h2>
+            {editingId ? "Edit Event" : "Create Event"}
+          </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Event Title</label>
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter event title"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Enter event description"
-              rows="4"
-            />
-          </div>
-
-          <div className="form-row">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="date">Date and Time</label>
+              <label htmlFor="title">
+                Event Title
+              </label>
+
               <input
-                id="date"
-                name="date"
-                type="datetime-local"
-                value={form.date}
+                id="title"
+                name="title"
+                type="text"
+                value={form.title}
                 onChange={handleChange}
+                placeholder="Enter event title"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="location">Location</label>
-              <input
-                id="location"
-                name="location"
-                type="text"
-                value={form.location}
+              <label htmlFor="description">
+                Description
+              </label>
+
+              <textarea
+                id="description"
+                name="description"
+                value={form.description}
                 onChange={handleChange}
-                placeholder="Enter location"
+                placeholder="Enter event description"
+                rows="4"
               />
             </div>
-          </div>
 
-          <div className="form-actions">
-            <button type="submit">
-              {editingId ? "Update Event" : "Create Event"}
-            </button>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="date">
+                  Date and Time
+                </label>
 
-            {editingId && (
-              <button type="button" onClick={resetForm}>
-                Cancel
+                <input
+                  id="date"
+                  name="date"
+                  type="datetime-local"
+                  value={form.date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="location">
+                  Location
+                </label>
+
+                <input
+                  id="location"
+                  name="location"
+                  type="text"
+                  value={form.location}
+                  onChange={handleChange}
+                  placeholder="Enter location"
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit">
+                {editingId
+                  ? "Update Event"
+                  : "Create Event"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
+
+      {!canManageEvents && (
+        <div className="empty-state">
+          You can view events, but you do not have
+          permission to create or edit them.
+        </div>
+      )}
 
       <section className="events-section">
         <div className="section-heading">
           <h2>All Events</h2>
-          <button type="button" onClick={loadEvents}>
+
+          <button
+            type="button"
+            onClick={loadEvents}
+          >
             Refresh
           </button>
         </div>
@@ -212,20 +319,30 @@ function Events() {
         ) : (
           <div className="events-list">
             {events.map((event) => (
-              <article className="event-card" key={event._id}>
+              <article
+                className="event-card"
+                key={event._id}
+              >
                 <div className="event-card-content">
                   <h3>{event.title}</h3>
 
-                  <p>{event.description || "No description provided."}</p>
+                  <p>
+                    {event.description ||
+                      "No description provided."}
+                  </p>
 
                   <div className="event-details">
                     <span>
                       📅{" "}
-                      {new Date(event.date).toLocaleString()}
+                      {new Date(
+                        event.date
+                      ).toLocaleString()}
                     </span>
 
                     <span>
-                      📍 {event.location || "Location not specified"}
+                      📍{" "}
+                      {event.location ||
+                        "Location not specified"}
                     </span>
 
                     <span>
@@ -234,21 +351,32 @@ function Events() {
                   </div>
                 </div>
 
-                <div className="event-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(event)}
-                  >
-                    Edit
-                  </button>
+                {(canEditEvent ||
+                  canDeleteEvent) && (
+                  <div className="event-actions">
+                    {canEditEvent && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(event)
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(event._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+                    {canDeleteEvent && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(event._id)
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>

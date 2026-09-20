@@ -8,6 +8,7 @@ import {
   unpublishAnnouncement,
   getEvents,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Announcements() {
   const [announcements, setAnnouncements] = useState([]);
@@ -26,12 +27,50 @@ function Announcements() {
 
   const [editingId, setEditingId] = useState(null);
 
+  // Get logged-in user's role
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  // Role permissions
+  const canCreateAnnouncement = canPerformAction(
+    userRole,
+    "createAnnouncement"
+  );
+
+  const canEditAnnouncement = canPerformAction(
+    userRole,
+    "editAnnouncement"
+  );
+
+  const canDeleteAnnouncement = canPerformAction(
+    userRole,
+    "deleteAnnouncement"
+  );
+
+  const canPublishAnnouncement = canPerformAction(
+    userRole,
+    "publishAnnouncement"
+  );
+
+  const canManageAnnouncements =
+    canCreateAnnouncement || canEditAnnouncement;
+
   const loadAnnouncements = async () => {
     try {
       setLoading(true);
       setError("");
 
       const data = await getAnnouncements();
+
       setAnnouncements(data.data || []);
     } catch (err) {
       setError(err.message);
@@ -43,6 +82,7 @@ function Announcements() {
   const loadEvents = async () => {
     try {
       const data = await getEvents();
+
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
@@ -77,6 +117,20 @@ function Announcements() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (editingId && !canEditAnnouncement) {
+      setError(
+        "You do not have permission to edit announcements."
+      );
+      return;
+    }
+
+    if (!editingId && !canCreateAnnouncement) {
+      setError(
+        "You do not have permission to create announcements."
+      );
+      return;
+    }
+
     try {
       setError("");
       setSuccess("");
@@ -89,11 +143,22 @@ function Announcements() {
       };
 
       if (editingId) {
-        await updateAnnouncement(editingId, announcementData);
-        setSuccess("Announcement updated successfully.");
+        await updateAnnouncement(
+          editingId,
+          announcementData
+        );
+
+        setSuccess(
+          "Announcement updated successfully."
+        );
       } else {
-        await createAnnouncement(announcementData);
-        setSuccess("Announcement created successfully.");
+        await createAnnouncement(
+          announcementData
+        );
+
+        setSuccess(
+          "Announcement created successfully."
+        );
       }
 
       resetForm();
@@ -104,12 +169,22 @@ function Announcements() {
   };
 
   const handleEdit = (announcement) => {
+    if (!canEditAnnouncement) {
+      setError(
+        "You do not have permission to edit announcements."
+      );
+      return;
+    }
+
     setEditingId(announcement._id);
 
     setForm({
       title: announcement.title || "",
       content: announcement.content || "",
-      eventId: announcement.eventId?._id || announcement.eventId || "",
+      eventId:
+        announcement.eventId?._id ||
+        announcement.eventId ||
+        "",
       createdBy: announcement.createdBy || "",
     });
 
@@ -123,19 +198,33 @@ function Announcements() {
   };
 
   const handleDelete = async (announcementId) => {
+    if (!canDeleteAnnouncement) {
+      setError(
+        "You do not have permission to delete announcements."
+      );
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this announcement?"
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       setError("");
       setSuccess("");
 
-      await deleteAnnouncement(announcementId);
+      await deleteAnnouncement(
+        announcementId
+      );
 
-      setSuccess("Announcement deleted successfully.");
+      setSuccess(
+        "Announcement deleted successfully."
+      );
+
       await loadAnnouncements();
     } catch (err) {
       setError(err.message);
@@ -143,13 +232,25 @@ function Announcements() {
   };
 
   const handlePublish = async (announcementId) => {
+    if (!canPublishAnnouncement) {
+      setError(
+        "You do not have permission to publish announcements."
+      );
+      return;
+    }
+
     try {
       setError("");
       setSuccess("");
 
-      await publishAnnouncement(announcementId);
+      await publishAnnouncement(
+        announcementId
+      );
 
-      setSuccess("Announcement published successfully.");
+      setSuccess(
+        "Announcement published successfully."
+      );
+
       await loadAnnouncements();
     } catch (err) {
       setError(err.message);
@@ -157,13 +258,25 @@ function Announcements() {
   };
 
   const handleUnpublish = async (announcementId) => {
+    if (!canPublishAnnouncement) {
+      setError(
+        "You do not have permission to unpublish announcements."
+      );
+      return;
+    }
+
     try {
       setError("");
       setSuccess("");
 
-      await unpublishAnnouncement(announcementId);
+      await unpublishAnnouncement(
+        announcementId
+      );
 
-      setSuccess("Announcement unpublished successfully.");
+      setSuccess(
+        "Announcement unpublished successfully."
+      );
+
       await loadAnnouncements();
     } catch (err) {
       setError(err.message);
@@ -171,13 +284,19 @@ function Announcements() {
   };
 
   const getEventName = (eventId) => {
-    if (!eventId) return "No event linked";
+    if (!eventId) {
+      return "No event linked";
+    }
 
     const event = events.find(
-      (item) => item._id === (eventId?._id || eventId)
+      (item) =>
+        item._id ===
+        (eventId?._id || eventId)
     );
 
-    return event ? event.title : "Event not found";
+    return event
+      ? event.title
+      : "Event not found";
   };
 
   return (
@@ -185,12 +304,21 @@ function Announcements() {
       <header className="page-header">
         <div>
           <p className="eyebrow">ClubOps AI</p>
+
           <h1>Announcements</h1>
-          <p>Create, manage, and publish club announcements.</p>
+
+          <p>
+            Create, manage, and publish club
+            announcements.
+          </p>
         </div>
       </header>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
       {success && (
         <div className="success-message">
@@ -198,93 +326,118 @@ function Announcements() {
         </div>
       )}
 
-      <section className="event-form-section">
-        <h2>
-          {editingId ? "Edit Announcement" : "Create Announcement"}
-        </h2>
+      {/* Create / Edit form */}
+      {canManageAnnouncements && (
+        <section className="event-form-section">
+          <h2>
+            {editingId
+              ? "Edit Announcement"
+              : "Create Announcement"}
+          </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Title</label>
-
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter announcement title"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="content">Content</label>
-
-            <textarea
-              id="content"
-              name="content"
-              value={form.content}
-              onChange={handleChange}
-              placeholder="Write your announcement..."
-              rows="6"
-              required
-            />
-          </div>
-
-          <div className="form-row">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="eventId">Event</label>
-
-              <select
-                id="eventId"
-                name="eventId"
-                value={form.eventId}
-                onChange={handleChange}
-              >
-                <option value="">No event</option>
-
-                {events.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="createdBy">Created By</label>
+              <label htmlFor="title">
+                Title
+              </label>
 
               <input
-                id="createdBy"
-                name="createdBy"
+                id="title"
+                name="title"
                 type="text"
-                value={form.createdBy}
+                value={form.title}
                 onChange={handleChange}
-                placeholder="Enter creator name"
+                placeholder="Enter announcement title"
                 required
               />
             </div>
-          </div>
 
-          <div className="form-actions">
-            <button type="submit">
-              {editingId
-                ? "Update Announcement"
-                : "Create Announcement"}
-            </button>
+            <div className="form-group">
+              <label htmlFor="content">
+                Content
+              </label>
 
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-              >
-                Cancel Edit
+              <textarea
+                id="content"
+                name="content"
+                value={form.content}
+                onChange={handleChange}
+                placeholder="Write your announcement..."
+                rows="6"
+                required
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="eventId">
+                  Event
+                </label>
+
+                <select
+                  id="eventId"
+                  name="eventId"
+                  value={form.eventId}
+                  onChange={handleChange}
+                >
+                  <option value="">
+                    No event
+                  </option>
+
+                  {events.map((event) => (
+                    <option
+                      key={event._id}
+                      value={event._id}
+                    >
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="createdBy">
+                  Created By
+                </label>
+
+                <input
+                  id="createdBy"
+                  name="createdBy"
+                  type="text"
+                  value={form.createdBy}
+                  onChange={handleChange}
+                  placeholder="Enter creator name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit">
+                {editingId
+                  ? "Update Announcement"
+                  : "Create Announcement"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
+
+      {!canManageAnnouncements && (
+        <div className="empty-state">
+          You can view announcements, but you do not
+          have permission to create or edit them.
+        </div>
+      )}
 
       <section className="events-section">
         <div className="section-heading">
@@ -325,18 +478,24 @@ function Announcements() {
                     </p>
 
                     <p>
-                      <strong>Created By:</strong>{" "}
+                      <strong>
+                        Created By:
+                      </strong>{" "}
                       {announcement.createdBy}
                     </p>
 
                     <p>
                       <strong>Event:</strong>{" "}
-                      {getEventName(announcement.eventId)}
+                      {getEventName(
+                        announcement.eventId
+                      )}
                     </p>
 
                     {announcement.publishedAt && (
                       <p>
-                        <strong>Published:</strong>{" "}
+                        <strong>
+                          Published:
+                        </strong>{" "}
                         {new Date(
                           announcement.publishedAt
                         ).toLocaleString()}
@@ -352,45 +511,67 @@ function Announcements() {
                   </div>
                 </div>
 
-                <div className="event-actions">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleEdit(announcement)
-                    }
-                  >
-                    Edit
-                  </button>
+                {(canEditAnnouncement ||
+                  canPublishAnnouncement ||
+                  canDeleteAnnouncement) && (
+                  <div className="event-actions">
+                    {canEditAnnouncement && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(
+                            announcement
+                          )
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
 
-                  {announcement.status === "Draft" ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handlePublish(announcement._id)
-                      }
-                    >
-                      Publish
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleUnpublish(announcement._id)
-                      }
-                    >
-                      Unpublish
-                    </button>
-                  )}
+                    {canPublishAnnouncement &&
+                      announcement.status ===
+                        "Draft" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handlePublish(
+                              announcement._id
+                            )
+                          }
+                        >
+                          Publish
+                        </button>
+                      )}
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleDelete(announcement._id)
-                    }
-                  >
-                    Delete
-                  </button>
-                </div>
+                    {canPublishAnnouncement &&
+                      announcement.status !==
+                        "Draft" && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleUnpublish(
+                              announcement._id
+                            )
+                          }
+                        >
+                          Unpublish
+                        </button>
+                      )}
+
+                    {canDeleteAnnouncement && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(
+                            announcement._id
+                          )
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import Dashboard from "./pages/Dashboard";
+import { useEffect, useState } from "react";
 import Events from "./pages/Events";
 import Tasks from "./pages/Tasks";
 import Deadlines from "./pages/Deadlines";
@@ -8,7 +8,46 @@ import Documents from "./pages/Documents";
 import Meetings from "./pages/Meetings";
 import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
+import {
+  canAccessPage,
+  getRoleLabel,
+} from "./config/permissions";
 import "./App.css";
+
+const NAV_ITEMS = [
+  {
+    key: "dashboard",
+    label: "Dashboard",
+  },
+  {
+    key: "events",
+    label: "Events",
+  },
+  {
+    key: "tasks",
+    label: "Tasks",
+  },
+  {
+    key: "deadlines",
+    label: "Deadlines",
+  },
+  {
+    key: "volunteers",
+    label: "Volunteers",
+  },
+  {
+    key: "documents",
+    label: "Documents",
+  },
+  {
+    key: "meetings",
+    label: "Meetings",
+  },
+  {
+    key: "announcements",
+    label: "Announcements",
+  },
+];
 
 function App() {
   const [activePage, setActivePage] = useState("dashboard");
@@ -20,7 +59,12 @@ function App() {
 
     if (savedUser && token) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+
+        if (!canAccessPage(parsedUser.role, "dashboard")) {
+          setActivePage("events");
+        }
       } catch {
         localStorage.removeItem("clubops_user");
         localStorage.removeItem("clubops_token");
@@ -30,7 +74,12 @@ function App() {
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    setActivePage("dashboard");
+
+    if (canAccessPage(loggedInUser.role, "dashboard")) {
+      setActivePage("dashboard");
+    } else {
+      setActivePage("events");
+    }
   };
 
   const handleLogout = () => {
@@ -41,7 +90,27 @@ function App() {
     setActivePage("dashboard");
   };
 
+  const handlePageChange = (page) => {
+    if (!user) {
+      return;
+    }
+
+    if (!canAccessPage(user.role, page)) {
+      return;
+    }
+
+    setActivePage(page);
+  };
+
   const renderPage = () => {
+    if (!user) {
+      return null;
+    }
+
+    if (!canAccessPage(user.role, activePage)) {
+      return <Dashboard />;
+    }
+
     switch (activePage) {
       case "dashboard":
         return <Dashboard />;
@@ -76,122 +145,39 @@ function App() {
     return <Auth onLogin={handleLogin} />;
   }
 
+  const visibleNavItems = NAV_ITEMS.filter((item) =>
+    canAccessPage(user.role, item.key)
+  );
+
   return (
     <div className="app">
       <nav className="navbar">
         <div className="navbar-brand">
           <span className="brand-name">ClubOps AI</span>
-          <span className="brand-subtitle">
-            Club Operations
-          </span>
+          <span className="brand-subtitle">Club Operations</span>
         </div>
 
         <div className="navbar-links">
-          <button
-            type="button"
-            className={
-              activePage === "dashboard"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("dashboard")}
-          >
-            Dashboard
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "events"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("events")}
-          >
-            Events
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "tasks"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("tasks")}
-          >
-            Tasks
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "deadlines"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("deadlines")}
-          >
-            Deadlines
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "volunteers"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("volunteers")}
-          >
-            Volunteers
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "documents"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("documents")}
-          >
-            Documents
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "meetings"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() => setActivePage("meetings")}
-          >
-            Meetings
-          </button>
-
-          <button
-            type="button"
-            className={
-              activePage === "announcements"
-                ? "nav-button active"
-                : "nav-button"
-            }
-            onClick={() =>
-              setActivePage("announcements")
-            }
-          >
-            Announcements
-          </button>
+          {visibleNavItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={
+                activePage === item.key
+                  ? "nav-button active"
+                  : "nav-button"
+              }
+              onClick={() => handlePageChange(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
 
           <div className="user-section">
-            <span className="user-name">
-              {user.name}
-            </span>
+            <span className="user-name">{user.name}</span>
 
             <span className="user-role">
-              {user.role}
+              {getRoleLabel(user.role)}
             </span>
 
             <button

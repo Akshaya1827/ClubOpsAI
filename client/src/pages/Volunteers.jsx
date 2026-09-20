@@ -5,6 +5,7 @@ import {
   updateVolunteer,
   deleteVolunteer,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Volunteers() {
   const [volunteers, setVolunteers] = useState([]);
@@ -21,6 +22,28 @@ function Volunteers() {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  const canManageVolunteers = canPerformAction(
+    userRole,
+    "manageVolunteers"
+  );
+
+  const canDeleteVolunteer = canPerformAction(
+    userRole,
+    "deleteVolunteer"
+  );
 
   const fetchVolunteers = async () => {
     try {
@@ -64,6 +87,11 @@ function Volunteers() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (!canManageVolunteers) {
+      setError("You do not have permission to manage volunteers.");
+      return;
+    }
+
     try {
       setError("");
 
@@ -98,6 +126,11 @@ function Volunteers() {
   };
 
   const handleEdit = (volunteer) => {
+    if (!canManageVolunteers) {
+      setError("You do not have permission to edit volunteers.");
+      return;
+    }
+
     setEditingId(volunteer._id);
 
     setFormData({
@@ -118,6 +151,11 @@ function Volunteers() {
   };
 
   const handleDelete = async (volunteerId) => {
+    if (!canDeleteVolunteer) {
+      setError("You do not have permission to delete volunteers.");
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this volunteer?"
     );
@@ -160,118 +198,123 @@ function Volunteers() {
 
       {error && <div className="error-message">{error}</div>}
 
-      <section className="form-card">
-        <h2>{editingId ? "Edit Volunteer" : "Add Volunteer"}</h2>
+      {canManageVolunteers && (
+        <section className="form-card">
+          <h2>{editingId ? "Edit Volunteer" : "Add Volunteer"}</h2>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label htmlFor="volunteer-name">Name</label>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-group">
+                <label htmlFor="volunteer-name">Name</label>
 
-              <input
-                id="volunteer-name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter volunteer name"
-                required
-              />
+                <input
+                  id="volunteer-name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Enter volunteer name"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="volunteer-email">Email</label>
+
+                <input
+                  id="volunteer-email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter email"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="volunteer-phone">Phone</label>
+
+                <input
+                  id="volunteer-phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="Enter phone number"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="volunteer-skills">Skills</label>
+
+                <input
+                  id="volunteer-skills"
+                  name="skills"
+                  type="text"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  placeholder="Marketing, Design, Photography"
+                />
+
+                <small>
+                  Separate multiple skills with commas.
+                </small>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="volunteer-availability">
+                  Availability
+                </label>
+
+                <select
+                  id="volunteer-availability"
+                  name="availability"
+                  value={formData.availability}
+                  onChange={handleChange}
+                >
+                  <option value="Available">Available</option>
+                  <option value="Busy">Busy</option>
+                  <option value="Unavailable">Unavailable</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="volunteer-status">Status</label>
+
+                <select
+                  id="volunteer-status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="volunteer-email">Email</label>
-
-              <input
-                id="volunteer-email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="Enter email"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="volunteer-phone">Phone</label>
-
-              <input
-                id="volunteer-phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Enter phone number"
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="volunteer-skills">Skills</label>
-
-              <input
-                id="volunteer-skills"
-                name="skills"
-                type="text"
-                value={formData.skills}
-                onChange={handleChange}
-                placeholder="Marketing, Design, Photography"
-              />
-
-              <small>
-                Separate multiple skills with commas.
-              </small>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="volunteer-availability">
-                Availability
-              </label>
-
-              <select
-                id="volunteer-availability"
-                name="availability"
-                value={formData.availability}
-                onChange={handleChange}
-              >
-                <option value="Available">Available</option>
-                <option value="Busy">Busy</option>
-                <option value="Unavailable">Unavailable</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="volunteer-status">Status</label>
-
-              <select
-                id="volunteer-status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="primary-button">
-              {editingId ? "Update Volunteer" : "Add Volunteer"}
-            </button>
-
-            {editingId && (
+            <div className="form-actions">
               <button
-                type="button"
-                className="secondary-button"
-                onClick={resetForm}
+                type="submit"
+                className="primary-button"
               >
-                Cancel Edit
+                {editingId ? "Update Volunteer" : "Add Volunteer"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={resetForm}
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
 
       <section className="content-section">
         <div className="section-header">
@@ -289,12 +332,18 @@ function Volunteers() {
           </div>
         ) : volunteers.length === 0 ? (
           <div className="empty-state">
-            No volunteers found. Add your first volunteer above.
+            No volunteers found.
+            {canManageVolunteers
+              ? " Add your first volunteer above."
+              : ""}
           </div>
         ) : (
           <div className="card-grid">
             {volunteers.map((volunteer) => (
-              <article className="data-card" key={volunteer._id}>
+              <article
+                className="data-card"
+                key={volunteer._id}
+              >
                 <div className="card-header">
                   <div>
                     <h3>{volunteer.name}</h3>
@@ -315,7 +364,8 @@ function Volunteers() {
                 <div className="card-details">
                   {volunteer.phone && (
                     <p>
-                      <strong>Phone:</strong> {volunteer.phone}
+                      <strong>Phone:</strong>{" "}
+                      {volunteer.phone}
                     </p>
                   )}
 
@@ -330,14 +380,16 @@ function Volunteers() {
                     {volunteer.skills &&
                     volunteer.skills.length > 0 ? (
                       <div className="skill-list">
-                        {volunteer.skills.map((skill, index) => (
-                          <span
-                            className="skill-tag"
-                            key={`${volunteer._id}-${index}`}
-                          >
-                            {skill}
-                          </span>
-                        ))}
+                        {volunteer.skills.map(
+                          (skill, index) => (
+                            <span
+                              className="skill-tag"
+                              key={`${volunteer._id}-${index}`}
+                            >
+                              {skill}
+                            </span>
+                          )
+                        )}
                       </div>
                     ) : (
                       <span> No skills listed</span>
@@ -345,23 +397,31 @@ function Volunteers() {
                   </div>
                 </div>
 
-                <div className="card-actions">
-                  <button
-                    type="button"
-                    className="secondary-button"
-                    onClick={() => handleEdit(volunteer)}
-                  >
-                    Edit
-                  </button>
+                {canManageVolunteers && (
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      onClick={() =>
+                        handleEdit(volunteer)
+                      }
+                    >
+                      Edit
+                    </button>
 
-                  <button
-                    type="button"
-                    className="danger-button"
-                    onClick={() => handleDelete(volunteer._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+                    {canDeleteVolunteer && (
+                      <button
+                        type="button"
+                        className="danger-button"
+                        onClick={() =>
+                          handleDelete(volunteer._id)
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>

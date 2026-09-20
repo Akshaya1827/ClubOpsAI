@@ -6,6 +6,7 @@ import {
   deleteTask,
   getEvents,
 } from "../services/api";
+import { canPerformAction } from "../config/permissions";
 
 function Tasks() {
   const [tasks, setTasks] = useState([]);
@@ -25,6 +26,35 @@ function Tasks() {
     dueDate: "",
   });
 
+  const savedUser = localStorage.getItem("clubops_user");
+
+  let user = null;
+
+  try {
+    user = savedUser ? JSON.parse(savedUser) : null;
+  } catch {
+    user = null;
+  }
+
+  const userRole = user?.role;
+
+  const canCreateTask = canPerformAction(
+    userRole,
+    "createTask"
+  );
+
+  const canEditTask = canPerformAction(
+    userRole,
+    "editTask"
+  );
+
+  const canDeleteTask = canPerformAction(
+    userRole,
+    "deleteTask"
+  );
+
+  const canManageTasks = canCreateTask || canEditTask;
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -35,8 +65,8 @@ function Tasks() {
         getEvents(),
       ]);
 
-      setTasks(taskData.tasks);
-      setEvents(eventData.events);
+      setTasks(taskData.tasks || []);
+      setEvents(eventData.events || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -73,11 +103,26 @@ function Tasks() {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
+    if (editingId && !canEditTask) {
+      setError("You do not have permission to edit tasks.");
+      return;
+    }
+
+    if (!editingId && !canCreateTask) {
+      setError("You do not have permission to create tasks.");
+      return;
+    }
+
     try {
       setError("");
 
       if (!form.event) {
         setError("Please select an event.");
+        return;
+      }
+
+      if (!form.dueDate) {
+        setError("Please select a due date.");
         return;
       }
 
@@ -104,29 +149,43 @@ function Tasks() {
   };
 
   const handleEdit = (task) => {
-  setEditingId(task._id);
+    if (!canEditTask) {
+      setError("You do not have permission to edit tasks.");
+      return;
+    }
 
-  const eventId =
-    typeof task.event === "object" ? task.event._id : task.event;
+    setEditingId(task._id);
 
-  setForm({
-    title: task.title || "",
-    description: task.description || "",
-    event: eventId || "",
-    priority: task.priority || "medium",
-    status: task.status || "todo",
-    dueDate: task.dueDate
-      ? new Date(task.dueDate).toISOString().slice(0, 16)
-      : "",
-  });
+    const eventId =
+      typeof task.event === "object"
+        ? task.event?._id
+        : task.event;
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
+    setForm({
+      title: task.title || "",
+      description: task.description || "",
+      event: eventId || "",
+      priority: task.priority || "medium",
+      status: task.status || "todo",
+      dueDate: task.dueDate
+        ? new Date(task.dueDate)
+            .toISOString()
+            .slice(0, 16)
+        : "",
+    });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   const handleDelete = async (taskId) => {
+    if (!canDeleteTask) {
+      setError("You do not have permission to delete tasks.");
+      return;
+    }
+
     const confirmed = window.confirm(
       "Are you sure you want to delete this task?"
     );
@@ -158,7 +217,9 @@ function Tasks() {
       (item) => item._id === event
     );
 
-    return matchingEvent ? matchingEvent.title : "Unknown event";
+    return matchingEvent
+      ? matchingEvent.title
+      : "Unknown event";
   };
 
   return (
@@ -167,129 +228,175 @@ function Tasks() {
         <div>
           <p className="eyebrow">ClubOps AI</p>
           <h1>Tasks</h1>
-          <p>Manage tasks, priorities, statuses, and deadlines.</p>
+          <p>
+            Manage tasks, priorities, statuses, and deadlines.
+          </p>
         </div>
       </header>
 
-      {error && <div className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
 
-      <section className="event-form-section">
-        <h2>{editingId ? "Edit Task" : "Create Task"}</h2>
+      {canManageTasks && (
+        <section className="event-form-section">
+          <h2>
+            {editingId ? "Edit Task" : "Create Task"}
+          </h2>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="title">Task Title</label>
-
-            <input
-              id="title"
-              name="title"
-              type="text"
-              value={form.title}
-              onChange={handleChange}
-              placeholder="Enter task title"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="description">Description</label>
-
-            <textarea
-              id="description"
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              placeholder="Enter task description"
-              rows="4"
-            />
-          </div>
-
-          <div className="form-row">
+          <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="event">Event</label>
-
-              <select
-                id="event"
-                name="event"
-                value={form.event}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select an event</option>
-
-                {events.map((event) => (
-                  <option key={event._id} value={event._id}>
-                    {event.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="priority">Priority</label>
-
-              <select
-                id="priority"
-                name="priority"
-                value={form.priority}
-                onChange={handleChange}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="status">Status</label>
-
-              <select
-                id="status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                <option value="todo">To Do</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="dueDate">Due Date</label>
+              <label htmlFor="title">
+                Task Title
+              </label>
 
               <input
-                id="dueDate"
-                name="dueDate"
-                type="datetime-local"
-                value={form.dueDate}
+                id="title"
+                name="title"
+                type="text"
+                value={form.title}
                 onChange={handleChange}
+                placeholder="Enter task title"
                 required
               />
             </div>
-          </div>
 
-          <div className="form-actions">
-            <button type="submit">
-              {editingId ? "Update Task" : "Create Task"}
-            </button>
+            <div className="form-group">
+              <label htmlFor="description">
+                Description
+              </label>
 
-            {editingId && (
-              <button type="button" onClick={resetForm}>
-                Cancel
+              <textarea
+                id="description"
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Enter task description"
+                rows="4"
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="event">
+                  Event
+                </label>
+
+                <select
+                  id="event"
+                  name="event"
+                  value={form.event}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">
+                    Select an event
+                  </option>
+
+                  {events.map((event) => (
+                    <option
+                      key={event._id}
+                      value={event._id}
+                    >
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="priority">
+                  Priority
+                </label>
+
+                <select
+                  id="priority"
+                  name="priority"
+                  value={form.priority}
+                  onChange={handleChange}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="status">
+                  Status
+                </label>
+
+                <select
+                  id="status"
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                >
+                  <option value="todo">To Do</option>
+                  <option value="in-progress">
+                    In Progress
+                  </option>
+                  <option value="completed">
+                    Completed
+                  </option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="dueDate">
+                  Due Date
+                </label>
+
+                <input
+                  id="dueDate"
+                  name="dueDate"
+                  type="datetime-local"
+                  value={form.dueDate}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+              <button type="submit">
+                {editingId
+                  ? "Update Task"
+                  : "Create Task"}
               </button>
-            )}
-          </div>
-        </form>
-      </section>
+
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+      )}
+
+      {!canManageTasks && (
+        <div className="empty-state">
+          You can view tasks, but you do not have permission
+          to create or edit them.
+        </div>
+      )}
 
       <section className="events-section">
         <div className="section-heading">
           <h2>All Tasks</h2>
 
-          <button type="button" onClick={loadData}>
+          <button
+            type="button"
+            onClick={loadData}
+          >
             Refresh
           </button>
         </div>
@@ -301,7 +408,10 @@ function Tasks() {
         ) : (
           <div className="events-list">
             {tasks.map((task) => (
-              <article className="event-card" key={task._id}>
+              <article
+                className="event-card"
+                key={task._id}
+              >
                 <div className="event-card-content">
                   <h3>{task.title}</h3>
 
@@ -312,7 +422,8 @@ function Tasks() {
 
                   <div className="event-details">
                     <span>
-                      📌 Event: {getEventTitle(task.event)}
+                      📌 Event:{" "}
+                      {getEventTitle(task.event)}
                     </span>
 
                     <span>
@@ -332,21 +443,31 @@ function Tasks() {
                   </div>
                 </div>
 
-                <div className="event-actions">
-                  <button
-                    type="button"
-                    onClick={() => handleEdit(task)}
-                  >
-                    Edit
-                  </button>
+                {(canEditTask || canDeleteTask) && (
+                  <div className="event-actions">
+                    {canEditTask && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleEdit(task)
+                        }
+                      >
+                        Edit
+                      </button>
+                    )}
 
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(task._id)}
-                  >
-                    Delete
-                  </button>
-                </div>
+                    {canDeleteTask && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(task._id)
+                        }
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                )}
               </article>
             ))}
           </div>
