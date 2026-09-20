@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
 import Tasks from "./pages/Tasks";
 import Deadlines from "./pages/Deadlines";
@@ -9,9 +10,8 @@ import Announcements from "./pages/Announcements";
 import Auth from "./pages/Auth";
 import "./App.css";
 
-
 function App() {
-  const [activePage, setActivePage] = useState("events");
+  const [activePage, setActivePage] = useState("dashboard");
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ function App() {
 
   const handleLogin = (loggedInUser) => {
     setUser(loggedInUser);
-    setActivePage("events");
+    setActivePage("dashboard");
   };
 
   const handleLogout = () => {
@@ -38,11 +38,14 @@ function App() {
     localStorage.removeItem("clubops_user");
 
     setUser(null);
-    setActivePage("events");
+    setActivePage("dashboard");
   };
 
   const renderPage = () => {
     switch (activePage) {
+      case "dashboard":
+        return <Dashboard />;
+
       case "events":
         return <Events />;
 
@@ -65,7 +68,7 @@ function App() {
         return <Announcements />;
 
       default:
-        return <Events />;
+        return <Dashboard />;
     }
   };
 
@@ -78,10 +81,24 @@ function App() {
       <nav className="navbar">
         <div className="navbar-brand">
           <span className="brand-name">ClubOps AI</span>
-          <span className="brand-subtitle">Club Operations</span>
+          <span className="brand-subtitle">
+            Club Operations
+          </span>
         </div>
 
         <div className="navbar-links">
+          <button
+            type="button"
+            className={
+              activePage === "dashboard"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("dashboard")}
+          >
+            Dashboard
+          </button>
+
           <button
             type="button"
             className={
@@ -155,11 +172,18 @@ function App() {
           </button>
 
           <button
-          className={activePage === "announcements" ? "active" : ""}
-           onClick={() => setActivePage("announcements")}
+            type="button"
+            className={
+              activePage === "announcements"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() =>
+              setActivePage("announcements")
+            }
           >
-         Announcements
-      </button>
+            Announcements
+          </button>
 
           <div className="user-section">
             <span className="user-name">
