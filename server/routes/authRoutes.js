@@ -38,4 +38,21 @@ router.get(
         });
     }
 );
+router.get("/users",protect, async (req, res) => {
+    try {
+        const User = require("../models/User");
+
+        const users = await User.find().select("_id name email role");
+
+        res.json({
+            success: true,
+            users
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+});
 module.exports = router;

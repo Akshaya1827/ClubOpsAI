@@ -32,6 +32,18 @@ const documentSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    content: { type: String, default: "" },
+
+    chunks: {
+      type: [
+        {
+          text: { type: String, required: true },
+          embedding: { type: [Number], default: [] }
+        }
+      ],
+      default: []
+    },
+
   },
   {
     timestamps: true,
