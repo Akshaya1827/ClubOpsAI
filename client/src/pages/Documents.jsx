@@ -28,20 +28,24 @@ function Documents() {
 
   const [editingId, setEditingId] = useState(null);
 
-  // Get logged-in user's role
+  /* =========================================================
+     USER / PERMISSIONS
+     ========================================================= */
+
   const savedUser = localStorage.getItem("clubops_user");
 
   let user = null;
 
   try {
-    user = savedUser ? JSON.parse(savedUser) : null;
+    user = savedUser
+      ? JSON.parse(savedUser)
+      : null;
   } catch {
     user = null;
   }
 
   const userRole = user?.role;
 
-  // Role permissions
   const canUploadDocument = canPerformAction(
     userRole,
     "uploadDocument"
@@ -60,6 +64,36 @@ function Documents() {
   const canManageDocuments =
     canUploadDocument || canEditDocument;
 
+  /* =========================================================
+     CLUBOPS AI THEME
+     ========================================================= */
+
+  const mintSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
+
+  const inputStyle = {
+    background: "rgba(255, 255, 255, 0.82)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.20)",
+    borderRadius: "12px",
+  };
+
+  const headingStyle = {
+    color: "#173f35",
+  };
+
+  /* =========================================================
+     LOAD DOCUMENTS
+     ========================================================= */
+
   const loadDocuments = async () => {
     try {
       setLoading(true);
@@ -74,6 +108,10 @@ function Documents() {
       setLoading(false);
     }
   };
+
+  /* =========================================================
+     LOAD EVENTS
+     ========================================================= */
 
   const loadEvents = async () => {
     try {
@@ -90,6 +128,10 @@ function Documents() {
     loadEvents();
   }, []);
 
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -99,14 +141,23 @@ function Documents() {
     }));
   };
 
+  /* =========================================================
+     FILE CHANGE
+     ========================================================= */
+
   const handleFileChange = (event) => {
-    const file = event.target.files[0] || null;
+    const file =
+      event.target.files[0] || null;
 
     setForm((previousForm) => ({
       ...previousForm,
       file,
     }));
   };
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setForm({
@@ -119,21 +170,26 @@ function Documents() {
 
     setEditingId(null);
 
-    const fileInput = document.getElementById("file");
+    const fileInput =
+      document.getElementById("file");
 
     if (fileInput) {
       fileInput.value = "";
     }
   };
 
+  /* =========================================================
+     CREATE / UPDATE DOCUMENT
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Permission checks
     if (editingId && !canEditDocument) {
       setError(
         "You do not have permission to edit documents."
       );
+
       return;
     }
 
@@ -141,6 +197,7 @@ function Documents() {
       setError(
         "You do not have permission to upload documents."
       );
+
       return;
     }
 
@@ -148,24 +205,35 @@ function Documents() {
       setError("");
       setSuccess("");
 
-      // Editing an existing document
+      /* EDIT EXISTING DOCUMENT */
+
       if (editingId) {
         const documentData = {
           name: form.name,
           description: form.description,
-          eventId: form.eventId || undefined,
+          eventId:
+            form.eventId || undefined,
           uploadedBy: form.uploadedBy,
         };
 
-        await updateDocument(editingId, documentData);
+        await updateDocument(
+          editingId,
+          documentData
+        );
 
         setSuccess(
           "Document updated successfully."
         );
-      } else {
-        // Uploading a new document
+      }
+
+      /* UPLOAD NEW DOCUMENT */
+
+      else {
         if (!form.file) {
-          setError("Please select a file to upload.");
+          setError(
+            "Please select a file to upload."
+          );
+
           return;
         }
 
@@ -183,17 +251,23 @@ function Documents() {
       }
 
       resetForm();
+
       await loadDocuments();
     } catch (err) {
       setError(err.message);
     }
   };
 
+  /* =========================================================
+     EDIT DOCUMENT
+     ========================================================= */
+
   const handleEdit = (document) => {
     if (!canEditDocument) {
       setError(
         "You do not have permission to edit documents."
       );
+
       return;
     }
 
@@ -201,9 +275,12 @@ function Documents() {
 
     setForm({
       name: document.name || "",
-      description: document.description || "",
-      eventId: document.eventId || "",
-      uploadedBy: document.uploadedBy || "",
+      description:
+        document.description || "",
+      eventId:
+        document.eventId || "",
+      uploadedBy:
+        document.uploadedBy || "",
       file: null,
     });
 
@@ -216,11 +293,18 @@ function Documents() {
     });
   };
 
-  const handleDelete = async (documentId) => {
+  /* =========================================================
+     DELETE DOCUMENT
+     ========================================================= */
+
+  const handleDelete = async (
+    documentId
+  ) => {
     if (!canDeleteDocument) {
       setError(
         "You do not have permission to delete documents."
       );
+
       return;
     }
 
@@ -248,6 +332,10 @@ function Documents() {
     }
   };
 
+  /* =========================================================
+     EVENT NAME
+     ========================================================= */
+
   const getEventName = (eventId) => {
     if (!eventId) {
       return "No event assigned";
@@ -262,6 +350,10 @@ function Documents() {
       : "Event not found";
   };
 
+  /* =========================================================
+     FILE URL
+     ========================================================= */
+
   const getFileUrl = (fileUrl) => {
     if (!fileUrl) {
       return "";
@@ -274,19 +366,35 @@ function Documents() {
     return `${API_BASE_URL}${fileUrl}`;
   };
 
+  /* =========================================================
+     UI
+     ========================================================= */
+
   return (
     <div className="documents-page">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">ClubOps AI</p>
 
-          <h1>Documents</h1>
+      <header className="page-header">
+
+        <div>
+
+          <p className="eyebrow">
+            ClubOps AI
+          </p>
+
+          <h1>
+            Documents
+          </h1>
 
           <p>
-            Upload and manage club documents and event files.
+            Upload and manage club documents
+            and event files.
           </p>
+
         </div>
+
       </header>
+
+      {/* ERROR */}
 
       {error && (
         <div className="error-message">
@@ -294,23 +402,36 @@ function Documents() {
         </div>
       )}
 
+      {/* SUCCESS */}
+
       {success && (
         <div className="success-message">
           {success}
         </div>
       )}
 
-      {/* Upload / Edit form */}
+      {/* =====================================================
+          UPLOAD / EDIT DOCUMENT
+      ===================================================== */}
+
       {canManageDocuments && (
-        <section className="event-form-section">
-          <h2>
+        <section
+          className="event-form-section"
+          style={mintSectionStyle}
+        >
+
+          <h2 style={headingStyle}>
             {editingId
               ? "Edit Document"
               : "Upload Document"}
           </h2>
 
           <form onSubmit={handleSubmit}>
+
+            {/* DOCUMENT NAME */}
+
             <div className="form-group">
+
               <label htmlFor="name">
                 Document Name
               </label>
@@ -323,10 +444,15 @@ function Documents() {
                 onChange={handleChange}
                 placeholder="Enter document name"
                 required
+                style={inputStyle}
               />
+
             </div>
 
+            {/* DESCRIPTION */}
+
             <div className="form-group">
+
               <label htmlFor="description">
                 Description
               </label>
@@ -338,11 +464,17 @@ function Documents() {
                 onChange={handleChange}
                 placeholder="Enter document description"
                 rows="4"
+                style={inputStyle}
               />
+
             </div>
 
+            {/* EVENT + UPLOADED BY */}
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="eventId">
                   Event
                 </label>
@@ -352,7 +484,9 @@ function Documents() {
                   name="eventId"
                   value={form.eventId}
                   onChange={handleChange}
+                  style={inputStyle}
                 >
+
                   <option value="">
                     No event
                   </option>
@@ -365,10 +499,13 @@ function Documents() {
                       {event.title}
                     </option>
                   ))}
+
                 </select>
+
               </div>
 
               <div className="form-group">
+
                 <label htmlFor="uploadedBy">
                   Uploaded By
                 </label>
@@ -380,12 +517,18 @@ function Documents() {
                   value={form.uploadedBy}
                   onChange={handleChange}
                   placeholder="Enter uploader name"
+                  style={inputStyle}
                 />
+
               </div>
+
             </div>
+
+            {/* FILE */}
 
             {!editingId && (
               <div className="form-group">
+
                 <label htmlFor="file">
                   File
                 </label>
@@ -396,6 +539,7 @@ function Documents() {
                   type="file"
                   onChange={handleFileChange}
                   required
+                  style={inputStyle}
                 />
 
                 {form.file && (
@@ -406,18 +550,25 @@ function Documents() {
                     </strong>
                   </p>
                 )}
+
               </div>
             )}
 
+            {/* EDIT FILE MESSAGE */}
+
             {editingId && (
               <p>
-                The existing uploaded file will be kept.
-                File replacement is not supported by the
-                current backend update route.
+                The existing uploaded file will
+                be kept. File replacement is not
+                supported by the current backend
+                update route.
               </p>
             )}
 
+            {/* BUTTONS */}
+
             <div className="form-actions">
+
               <button type="submit">
                 {editingId
                   ? "Update Document"
@@ -432,22 +583,38 @@ function Documents() {
                   Cancel
                 </button>
               )}
+
             </div>
+
           </form>
+
         </section>
       )}
 
-      {/* Volunteer information */}
+      {/* VIEW ONLY */}
+
       {!canManageDocuments && (
         <div className="empty-state">
-          You can view and open documents, but you do not
-          have permission to upload or edit them.
+          You can view and open documents,
+          but you do not have permission to
+          upload or edit them.
         </div>
       )}
 
-      <section className="events-section">
+      {/* =====================================================
+          ALL DOCUMENTS
+      ===================================================== */}
+
+      <section
+        className="events-section"
+        style={mintSectionStyle}
+      >
+
         <div className="section-heading">
-          <h2>All Documents</h2>
+
+          <h2>
+            All Documents
+          </h2>
 
           <button
             type="button"
@@ -455,21 +622,37 @@ function Documents() {
           >
             Refresh
           </button>
+
         </div>
 
         {loading ? (
-          <p>Loading documents...</p>
+
+          <p>
+            Loading documents...
+          </p>
+
         ) : documents.length === 0 ? (
-          <p>No documents found.</p>
+
+          <p>
+            No documents found.
+          </p>
+
         ) : (
+
           <div className="events-list">
+
             {documents.map((document) => (
+
               <article
                 className="event-card"
                 key={document._id}
               >
+
                 <div className="event-card-content">
-                  <h3>{document.name}</h3>
+
+                  <h3>
+                    {document.name}
+                  </h3>
 
                   <p>
                     {document.description ||
@@ -477,6 +660,7 @@ function Documents() {
                   </p>
 
                   <div className="event-details">
+
                     <span>
                       Event:{" "}
                       {getEventName(
@@ -504,11 +688,15 @@ function Documents() {
                           ).toLocaleString()
                         : "Date not available"}
                     </span>
+
                   </div>
+
                 </div>
 
                 <div className="event-actions">
-                  {/* Everyone can open/view the document */}
+
+                  {/* OPEN */}
+
                   {document.fileUrl && (
                     <a
                       href={getFileUrl(
@@ -521,19 +709,23 @@ function Documents() {
                     </a>
                   )}
 
-                  {/* Coordinator + Admin */}
+                  {/* EDIT */}
+
                   {canEditDocument && (
                     <button
                       type="button"
                       onClick={() =>
-                        handleEdit(document)
+                        handleEdit(
+                          document
+                        )
                       }
                     >
                       Edit
                     </button>
                   )}
 
-                  {/* Admin only */}
+                  {/* DELETE */}
+
                   {canDeleteDocument && (
                     <button
                       type="button"
@@ -546,12 +738,19 @@ function Documents() {
                       Delete
                     </button>
                   )}
+
                 </div>
+
               </article>
+
             ))}
+
           </div>
+
         )}
+
       </section>
+
     </div>
   );
 }

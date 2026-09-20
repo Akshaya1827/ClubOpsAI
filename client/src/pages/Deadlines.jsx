@@ -13,7 +13,6 @@ function Deadlines({ showToast }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-
   /* =========================================================
      LOAD DEADLINES
      ========================================================= */
@@ -42,7 +41,6 @@ function Deadlines({ showToast }) {
           "Deadlines refreshed successfully."
         );
       }
-
     } catch (err) {
       setError(err.message);
 
@@ -53,17 +51,14 @@ function Deadlines({ showToast }) {
           "error"
         );
       }
-
     } finally {
       setLoading(false);
     }
   };
 
-
   useEffect(() => {
     loadDeadlines();
   }, []);
-
 
   /* =========================================================
      EVENT TITLE
@@ -81,6 +76,48 @@ function Deadlines({ showToast }) {
     return "Event";
   };
 
+  /* =========================================================
+     DEADLINE CARD STYLE
+     ========================================================= */
+
+  const deadlineCardStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border: "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "22px",
+    boxShadow:
+      "0 10px 28px rgba(46, 92, 76, 0.08)",
+    padding: "28px 30px",
+    marginBottom: "18px",
+  };
+
+  const deadlineTitleStyle = {
+    margin: "0 0 8px",
+    color: "#173f35",
+    fontSize: "21px",
+    fontWeight: "700",
+  };
+
+  const deadlineDescriptionStyle = {
+    margin: "0 0 22px",
+    color: "#68837a",
+    fontSize: "16px",
+  };
+
+  const deadlineDetailsStyle = {
+    display: "flex",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: "14px 24px",
+    color: "#52756a",
+    fontSize: "14px",
+  };
+
+  const deadlineDetailStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "5px",
+  };
 
   /* =========================================================
      RENDER TASK
@@ -90,51 +127,90 @@ function Deadlines({ showToast }) {
     <article
       className="deadline-card"
       key={task._id}
+      style={deadlineCardStyle}
     >
-
       <div>
-
-        <h3>
+        <h3 style={deadlineTitleStyle}>
           {task.title}
         </h3>
 
-        <p>
+        <p style={deadlineDescriptionStyle}>
           {task.description ||
             "No description provided."}
         </p>
 
-
-        <div className="deadline-details">
-
-          <span>
+        <div
+          className="deadline-details"
+          style={deadlineDetailsStyle}
+        >
+          <span style={deadlineDetailStyle}>
             📌 Event:{" "}
             {getEventTitle(task.event)}
           </span>
 
-          <span>
+          <span style={deadlineDetailStyle}>
             🎯 Priority:{" "}
             {task.priority}
           </span>
 
-          <span>
+          <span style={deadlineDetailStyle}>
             📋 Status:{" "}
             {task.status}
           </span>
 
-          <span>
+          <span style={deadlineDetailStyle}>
             ⏰ Due:{" "}
             {new Date(
               task.dueDate
             ).toLocaleString()}
           </span>
-
         </div>
-
       </div>
-
     </article>
   );
 
+  /* =========================================================
+     SECTION STYLE
+     ========================================================= */
+
+  const deadlineSectionStyle = {
+    marginBottom: "32px",
+  };
+
+  const deadlineHeadingStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: "18px",
+  };
+
+  const deadlineHeadingLeftStyle = {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+  };
+
+  const deadlineHeadingTitleStyle = {
+    margin: 0,
+    color: "#173f35",
+    fontSize: "22px",
+    fontWeight: "700",
+  };
+
+  const deadlineCountStyle = {
+    minWidth: "32px",
+    height: "32px",
+    padding: "0 10px",
+    borderRadius: "999px",
+    background: "#e1f2e9",
+    color: "#36715d",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "13px",
+    fontWeight: "700",
+    boxSizing: "border-box",
+  };
 
   /* =========================================================
      UI
@@ -146,7 +222,6 @@ function Deadlines({ showToast }) {
       <header className="page-header">
 
         <div>
-
           <p className="eyebrow">
             ClubOps AI
           </p>
@@ -159,9 +234,7 @@ function Deadlines({ showToast }) {
             Keep track of today's,
             upcoming, and overdue tasks.
           </p>
-
         </div>
-
 
         <button
           type="button"
@@ -175,7 +248,6 @@ function Deadlines({ showToast }) {
 
       </header>
 
-
       {/* =====================================================
           ERROR
       ===================================================== */}
@@ -185,7 +257,6 @@ function Deadlines({ showToast }) {
           {error}
         </div>
       )}
-
 
       {/* =====================================================
           CONTENT
@@ -205,29 +276,40 @@ function Deadlines({ showToast }) {
               OVERDUE
           ================================================= */}
 
-          <section className="deadline-section overdue-section">
+          <section
+            className="deadline-section overdue-section"
+            style={deadlineSectionStyle}
+          >
 
-            <div className="deadline-heading">
+            <div
+              className="deadline-heading"
+              style={deadlineHeadingStyle}
+            >
 
-              <div>
+              <div
+                style={deadlineHeadingLeftStyle}
+              >
 
                 <span className="deadline-icon">
                   🔴
                 </span>
 
-                <h2>
+                <h2
+                  style={deadlineHeadingTitleStyle}
+                >
                   Overdue
                 </h2>
 
               </div>
 
-
-              <span className="deadline-count">
+              <span
+                className="deadline-count"
+                style={deadlineCountStyle}
+              >
                 {overdue.length}
               </span>
 
             </div>
-
 
             {overdue.length === 0 ? (
 
@@ -250,29 +332,40 @@ function Deadlines({ showToast }) {
               TODAY
           ================================================= */}
 
-          <section className="deadline-section today-section">
+          <section
+            className="deadline-section today-section"
+            style={deadlineSectionStyle}
+          >
 
-            <div className="deadline-heading">
+            <div
+              className="deadline-heading"
+              style={deadlineHeadingStyle}
+            >
 
-              <div>
+              <div
+                style={deadlineHeadingLeftStyle}
+              >
 
                 <span className="deadline-icon">
                   🟡
                 </span>
 
-                <h2>
+                <h2
+                  style={deadlineHeadingTitleStyle}
+                >
                   Due Today
                 </h2>
 
               </div>
 
-
-              <span className="deadline-count">
+              <span
+                className="deadline-count"
+                style={deadlineCountStyle}
+              >
                 {today.length}
               </span>
 
             </div>
-
 
             {today.length === 0 ? (
 
@@ -295,29 +388,40 @@ function Deadlines({ showToast }) {
               UPCOMING
           ================================================= */}
 
-          <section className="deadline-section upcoming-section">
+          <section
+            className="deadline-section upcoming-section"
+            style={deadlineSectionStyle}
+          >
 
-            <div className="deadline-heading">
+            <div
+              className="deadline-heading"
+              style={deadlineHeadingStyle}
+            >
 
-              <div>
+              <div
+                style={deadlineHeadingLeftStyle}
+              >
 
                 <span className="deadline-icon">
                   🔵
                 </span>
 
-                <h2>
+                <h2
+                  style={deadlineHeadingTitleStyle}
+                >
                   Upcoming
                 </h2>
 
               </div>
 
-
-              <span className="deadline-count">
+              <span
+                className="deadline-count"
+                style={deadlineCountStyle}
+              >
                 {upcoming.length}
               </span>
 
             </div>
-
 
             {upcoming.length === 0 ? (
 
