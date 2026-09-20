@@ -1,122 +1,213 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import Dashboard from "./pages/Dashboard";
+import Events from "./pages/Events";
+import Tasks from "./pages/Tasks";
+import Deadlines from "./pages/Deadlines";
+import Volunteers from "./pages/Volunteers";
+import Documents from "./pages/Documents";
+import Meetings from "./pages/Meetings";
+import Announcements from "./pages/Announcements";
+import Auth from "./pages/Auth";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activePage, setActivePage] = useState("dashboard");
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const savedUser = localStorage.getItem("clubops_user");
+    const token = localStorage.getItem("clubops_token");
+
+    if (savedUser && token) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        localStorage.removeItem("clubops_user");
+        localStorage.removeItem("clubops_token");
+      }
+    }
+  }, []);
+
+  const handleLogin = (loggedInUser) => {
+    setUser(loggedInUser);
+    setActivePage("dashboard");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("clubops_token");
+    localStorage.removeItem("clubops_user");
+
+    setUser(null);
+    setActivePage("dashboard");
+  };
+
+  const renderPage = () => {
+    switch (activePage) {
+      case "dashboard":
+        return <Dashboard />;
+
+      case "events":
+        return <Events />;
+
+      case "tasks":
+        return <Tasks />;
+
+      case "deadlines":
+        return <Deadlines />;
+
+      case "volunteers":
+        return <Volunteers />;
+
+      case "documents":
+        return <Documents />;
+
+      case "meetings":
+        return <Meetings />;
+
+      case "announcements":
+        return <Announcements />;
+
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  if (!user) {
+    return <Auth onLogin={handleLogin} />;
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app">
+      <nav className="navbar">
+        <div className="navbar-brand">
+          <span className="brand-name">ClubOps AI</span>
+          <span className="brand-subtitle">
+            Club Operations
+          </span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
 
-      <div className="ticks"></div>
+        <div className="navbar-links">
+          <button
+            type="button"
+            className={
+              activePage === "dashboard"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("dashboard")}
+          >
+            Dashboard
+          </button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+          <button
+            type="button"
+            className={
+              activePage === "events"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("events")}
+          >
+            Events
+          </button>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+          <button
+            type="button"
+            className={
+              activePage === "tasks"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("tasks")}
+          >
+            Tasks
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "deadlines"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("deadlines")}
+          >
+            Deadlines
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "volunteers"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("volunteers")}
+          >
+            Volunteers
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "documents"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("documents")}
+          >
+            Documents
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "meetings"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() => setActivePage("meetings")}
+          >
+            Meetings
+          </button>
+
+          <button
+            type="button"
+            className={
+              activePage === "announcements"
+                ? "nav-button active"
+                : "nav-button"
+            }
+            onClick={() =>
+              setActivePage("announcements")
+            }
+          >
+            Announcements
+          </button>
+
+          <div className="user-section">
+            <span className="user-name">
+              {user.name}
+            </span>
+
+            <span className="user-role">
+              {user.role}
+            </span>
+
+            <button
+              type="button"
+              className="logout-button"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main>{renderPage()}</main>
+    </div>
+  );
 }
 
-export default App
+export default App;

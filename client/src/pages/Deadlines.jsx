@@ -1,0 +1,192 @@
+import { useEffect, useState } from "react";
+import {
+  getUpcomingDeadlines,
+  getOverdueDeadlines,
+  getTodayDeadlines,
+} from "../services/api";
+
+function Deadlines() {
+  const [upcoming, setUpcoming] = useState([]);
+  const [overdue, setOverdue] = useState([]);
+  const [today, setToday] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadDeadlines = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [upcomingData, overdueData, todayData] =
+        await Promise.all([
+          getUpcomingDeadlines(),
+          getOverdueDeadlines(),
+          getTodayDeadlines(),
+        ]);
+
+      setUpcoming(upcomingData.tasks);
+      setOverdue(overdueData.tasks);
+      setToday(todayData.tasks);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDeadlines();
+  }, []);
+
+  const getEventTitle = (event) => {
+    if (!event) {
+      return "No event";
+    }
+
+    if (typeof event === "object") {
+      return event.title;
+    }
+
+    return "Event";
+  };
+
+  const renderTask = (task) => (
+    <article className="deadline-card" key={task._id}>
+      <div>
+        <h3>{task.title}</h3>
+
+        <p>
+          {task.description || "No description provided."}
+        </p>
+
+        <div className="deadline-details">
+          <span>
+            📌 Event: {getEventTitle(task.event)}
+          </span>
+
+          <span>
+            🎯 Priority: {task.priority}
+          </span>
+
+          <span>
+            📋 Status: {task.status}
+          </span>
+
+          <span>
+            ⏰ Due:{" "}
+            {new Date(task.dueDate).toLocaleString()}
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+
+  return (
+    <div className="events-page">
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">ClubOps AI</p>
+
+          <h1>Deadlines</h1>
+
+          <p>
+            Keep track of today's, upcoming, and overdue
+            tasks.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="refresh-button"
+          onClick={loadDeadlines}
+        >
+          Refresh
+        </button>
+      </header>
+
+      {error && (
+        <div className="error-message">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <p>Loading deadlines...</p>
+      ) : (
+        <>
+          <section className="deadline-section overdue-section">
+            <div className="deadline-heading">
+              <div>
+                <span className="deadline-icon">🔴</span>
+                <h2>Overdue</h2>
+              </div>
+
+              <span className="deadline-count">
+                {overdue.length}
+              </span>
+            </div>
+
+            {overdue.length === 0 ? (
+              <p className="empty-message">
+                No overdue tasks.
+              </p>
+            ) : (
+              <div className="deadline-list">
+                {overdue.map(renderTask)}
+              </div>
+            )}
+          </section>
+
+          <section className="deadline-section today-section">
+            <div className="deadline-heading">
+              <div>
+                <span className="deadline-icon">🟡</span>
+                <h2>Due Today</h2>
+              </div>
+
+              <span className="deadline-count">
+                {today.length}
+              </span>
+            </div>
+
+            {today.length === 0 ? (
+              <p className="empty-message">
+                No tasks are due today.
+              </p>
+            ) : (
+              <div className="deadline-list">
+                {today.map(renderTask)}
+              </div>
+            )}
+          </section>
+
+          <section className="deadline-section upcoming-section">
+            <div className="deadline-heading">
+              <div>
+                <span className="deadline-icon">🔵</span>
+                <h2>Upcoming</h2>
+              </div>
+
+              <span className="deadline-count">
+                {upcoming.length}
+              </span>
+            </div>
+
+            {upcoming.length === 0 ? (
+              <p className="empty-message">
+                No upcoming deadlines.
+              </p>
+            ) : (
+              <div className="deadline-list">
+                {upcoming.map(renderTask)}
+              </div>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default Deadlines;
