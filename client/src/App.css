@@ -2110,3 +2110,148 @@ section,
   transform: translateY(0);
 }
 
+/* =========================================================
+   ANNOUNCEMENTS - FORM FIX
+   ========================================================= */
+
+.announcements-page .event-form-section,
+.events-page .event-form-section {
+  padding: 32px 38px !important;
+}
+
+.announcements-page .event-form-section form,
+.events-page .event-form-section form {
+  width: 100% !important;
+  max-width: 1080px !important;
+  margin: 0 auto !important;
+}
+
+/* Form labels */
+
+.announcements-page .form-group label,
+.events-page .form-group label {
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  color: #173f35 !important;
+}
+
+/* Text inputs */
+
+.announcements-page .form-group input[type="text"],
+.announcements-page .form-group input[type="email"],
+.announcements-page .form-group select,
+.events-page .form-group input[type="text"],
+.events-page .form-group input[type="email"],
+.events-page .form-group select {
+  width: 100% !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  max-height: 50px !important;
+  box-sizing: border-box !important;
+
+  padding: 0 15px !important;
+
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+
+  border-radius: 11px !important;
+
+  background: rgba(255, 255, 255, 0.88) !important;
+
+  border: 1px solid rgba(65, 139, 112, 0.20) !important;
+
+  color: #173f35 !important;
+}
+
+/* Textarea */
+
+.announcements-page .form-group textarea,
+.events-page .form-group textarea {
+  width: 100% !important;
+
+  height: 140px !important;
+  min-height: 140px !important;
+  max-height: 180px !important;
+
+  box-sizing: border-box !important;
+
+  padding: 14px 15px !important;
+
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+
+  border-radius: 11px !important;
+
+  background: rgba(255, 255, 255, 0.88) !important;
+
+  border: 1px solid rgba(65, 139, 112, 0.20) !important;
+
+  color: #173f35 !important;
+
+  resize: vertical !important;
+}
+
+/* Placeholder */
+
+.announcements-page input::placeholder,
+.announcements-page textarea::placeholder,
+.events-page input::placeholder,
+.events-page textarea::placeholder {
+  font-size: 15px !important;
+  color: #8aa39b !important;
+  opacity: 1 !important;
+}
+
+/* Two-column fields */
+
+.announcements-page .form-row,
+.events-page .form-row {
+  display: grid !important;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr) !important;
+
+  gap: 20px !important;
+
+  margin-bottom: 20px !important;
+}
+
+/* Individual form groups */
+
+.announcements-page .form-group,
+.events-page .form-group {
+  margin-bottom: 20px !important;
+}
+
+/* Buttons */
+
+.announcements-page .form-actions,
+.events-page .form-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-top: 6px !important;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  .announcements-page .form-row,
+  .events-page .form-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .announcements-page .event-form-section,
+  .events-page .event-form-section {
+    padding: 24px 18px !important;
+  }
+
+  .announcements-page .event-form-section form,
+  .events-page .event-form-section form {
+    max-width: 100% !important;
+  }
+}

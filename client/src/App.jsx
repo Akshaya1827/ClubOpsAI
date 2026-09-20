@@ -10,6 +10,7 @@ import {
 
 import Dashboard from "./pages/Dashboard";
 import Events from "./pages/Events";
+import EventDetails from "./pages/EventDetails";
 import Tasks from "./pages/Tasks";
 import Deadlines from "./pages/Deadlines";
 import Volunteers from "./pages/Volunteers";
@@ -114,37 +115,23 @@ function ProtectedApp({
     ...MORE_ITEMS,
   ];
 
-  const currentNavItem =
-    allExistingItems.find(
-      (item) =>
-        item.path === location.pathname
-    );
+  const currentNavItem = allExistingItems.find(
+    (item) => item.path === location.pathname
+  );
 
-  const activePage =
-    currentNavItem?.key || "";
+  const activePage = currentNavItem?.key || "";
 
-  const visibleNavItems =
-    NAV_ITEMS.filter((item) =>
-      canAccessPage(
-        user.role,
-        item.key
-      )
-    );
+  const visibleNavItems = NAV_ITEMS.filter((item) =>
+    canAccessPage(user.role, item.key)
+  );
 
-  const visibleMoreItems =
-    MORE_ITEMS.filter((item) =>
-      canAccessPage(
-        user.role,
-        item.key
-      )
-    );
+  const visibleMoreItems = MORE_ITEMS.filter((item) =>
+    canAccessPage(user.role, item.key)
+  );
 
-  const isMoreActive =
-    visibleMoreItems.some(
-      (item) =>
-        item.path ===
-        location.pathname
-    );
+  const isMoreActive = visibleMoreItems.some(
+    (item) => item.path === location.pathname
+  );
 
   useEffect(() => {
     if (isMoreActive) {
@@ -153,21 +140,28 @@ function ProtectedApp({
   }, [isMoreActive]);
 
   useEffect(() => {
-    const currentItem =
-      allExistingItems.find(
-        (item) =>
-          item.path ===
-          location.pathname
-      );
+    const currentItem = allExistingItems.find(
+      (item) => item.path === location.pathname
+    );
 
-    const futurePath =
-      FUTURE_ITEMS.some(
-        (item) =>
-          item.path ===
-          location.pathname
-      );
+    const futurePath = FUTURE_ITEMS.some(
+      (item) => item.path === location.pathname
+    );
 
     if (futurePath) {
+      return;
+    }
+
+    /*
+      Event detail pages such as /events/:eventId
+      are handled separately and should not be
+      redirected to Dashboard.
+    */
+    const isEventDetailsPage =
+      location.pathname.startsWith("/events/") &&
+      location.pathname !== "/events";
+
+    if (isEventDetailsPage) {
       return;
     }
 
@@ -175,15 +169,11 @@ function ProtectedApp({
       navigate("/dashboard", {
         replace: true,
       });
+
       return;
     }
 
-    if (
-      !canAccessPage(
-        user.role,
-        currentItem.key
-      )
-    ) {
+    if (!canAccessPage(user.role, currentItem.key)) {
       navigate("/dashboard", {
         replace: true,
       });
@@ -195,13 +185,8 @@ function ProtectedApp({
   ]);
 
   const handleLogout = () => {
-    localStorage.removeItem(
-      "clubops_token"
-    );
-
-    localStorage.removeItem(
-      "clubops_user"
-    );
+    localStorage.removeItem("clubops_token");
+    localStorage.removeItem("clubops_user");
 
     onLogout();
 
@@ -210,31 +195,19 @@ function ProtectedApp({
     });
   };
 
-  const handlePageChange = (
-    item
-  ) => {
-    if (
-      !canAccessPage(
-        user.role,
-        item.key
-      )
-    ) {
+  const handlePageChange = (item) => {
+    if (!canAccessPage(user.role, item.key)) {
       return;
     }
 
-    if (
-      location.pathname ===
-      item.path
-    ) {
+    if (location.pathname === item.path) {
       return;
     }
 
     navigate(item.path);
   };
 
-  const handleFuturePage = (
-    path
-  ) => {
+  const handleFuturePage = (path) => {
     navigate(path);
   };
 
@@ -259,52 +232,41 @@ function ProtectedApp({
           </div>
 
           <div className="navbar-links">
-            {visibleNavItems.map(
-              (item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={
-                    activePage ===
-                    item.key
-                      ? "nav-button active"
-                      : "nav-button"
-                  }
-                  onClick={() =>
-                    handlePageChange(
-                      item
-                    )
-                  }
-                >
-                  {item.label}
-                </button>
-              )
-            )}
+            {visibleNavItems.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={
+                  activePage === item.key
+                    ? "nav-button active"
+                    : "nav-button"
+                }
+                onClick={() =>
+                  handlePageChange(item)
+                }
+              >
+                {item.label}
+              </button>
+            ))}
 
-            {FUTURE_ITEMS.map(
-              (item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  className={
-                    activePage ===
-                    item.key
-                      ? "nav-button active"
-                      : "nav-button"
-                  }
-                  onClick={() =>
-                    handleFuturePage(
-                      item.path
-                    )
-                  }
-                >
-                  {item.label}
-                </button>
-              )
-            )}
+            {FUTURE_ITEMS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={
+                  activePage === item.key
+                    ? "nav-button active"
+                    : "nav-button"
+                }
+                onClick={() =>
+                  handleFuturePage(item.path)
+                }
+              >
+                {item.label}
+              </button>
+            ))}
 
-            {visibleMoreItems.length >
-              0 && (
+            {visibleMoreItems.length > 0 && (
               <>
                 <button
                   type="button"
@@ -315,76 +277,53 @@ function ProtectedApp({
                   }
                   onClick={() =>
                     setMoreOpen(
-                      (current) =>
-                        !current
+                      (current) => !current
                     )
                   }
                 >
-                  <span>
-                    More
-                  </span>
+                  <span>More</span>
 
                   <span
                     style={{
-                      marginLeft:
-                        "8px",
-                      fontSize:
-                        "12px",
+                      marginLeft: "8px",
+                      fontSize: "12px",
                     }}
                   >
-                    {moreOpen
-                      ? "▲"
-                      : "▼"}
+                    {moreOpen ? "▲" : "▼"}
                   </span>
                 </button>
 
                 {moreOpen && (
                   <div
                     style={{
-                      display:
-                        "flex",
-                      flexDirection:
-                        "column",
+                      display: "flex",
+                      flexDirection: "column",
                       gap: "4px",
-                      marginLeft:
-                        "12px",
-                      marginTop:
-                        "-4px",
-                      marginBottom:
-                        "8px",
+                      marginLeft: "12px",
+                      marginTop: "-4px",
+                      marginBottom: "8px",
                     }}
                   >
-                    {visibleMoreItems.map(
-                      (item) => (
-                        <button
-                          key={
-                            item.key
-                          }
-                          type="button"
-                          className={
-                            activePage ===
-                            item.key
-                              ? "nav-button active"
-                              : "nav-button"
-                          }
-                          onClick={() =>
-                            handlePageChange(
-                              item
-                            )
-                          }
-                          style={{
-                            fontSize:
-                              "14px",
-                            paddingLeft:
-                              "28px",
-                          }}
-                        >
-                          {
-                            item.label
-                          }
-                        </button>
-                      )
-                    )}
+                    {visibleMoreItems.map((item) => (
+                      <button
+                        key={item.key}
+                        type="button"
+                        className={
+                          activePage === item.key
+                            ? "nav-button active"
+                            : "nav-button"
+                        }
+                        onClick={() =>
+                          handlePageChange(item)
+                        }
+                        style={{
+                          fontSize: "14px",
+                          paddingLeft: "28px",
+                        }}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                   </div>
                 )}
               </>
@@ -397,17 +336,13 @@ function ProtectedApp({
             </span>
 
             <span className="user-role">
-              {getRoleLabel(
-                user.role
-              )}
+              {getRoleLabel(user.role)}
             </span>
 
             <button
               type="button"
               className="logout-button"
-              onClick={
-                handleLogout
-              }
+              onClick={handleLogout}
             >
               Logout
             </button>
@@ -418,29 +353,28 @@ function ProtectedApp({
           <Routes>
             <Route
               path="/dashboard"
-              element={
-                <Dashboard />
-              }
+              element={<Dashboard />}
             />
 
             <Route
               path="/events"
               element={
                 <Events
-                  showToast={
-                    showToast
-                  }
+                  showToast={showToast}
                 />
               }
+            />
+
+            <Route
+              path="/events/:eventId"
+              element={<EventDetails />}
             />
 
             <Route
               path="/tasks"
               element={
                 <Tasks
-                  showToast={
-                    showToast
-                  }
+                  showToast={showToast}
                 />
               }
             />
@@ -449,9 +383,7 @@ function ProtectedApp({
               path="/deadlines"
               element={
                 <Deadlines
-                  showToast={
-                    showToast
-                  }
+                  showToast={showToast}
                 />
               }
             />
@@ -460,32 +392,24 @@ function ProtectedApp({
               path="/volunteers"
               element={
                 <Volunteers
-                  showToast={
-                    showToast
-                  }
+                  showToast={showToast}
                 />
               }
             />
 
             <Route
               path="/documents"
-              element={
-                <Documents />
-              }
+              element={<Documents />}
             />
 
             <Route
               path="/meetings"
-              element={
-                <Meetings />
-              }
+              element={<Meetings />}
             />
 
             <Route
               path="/announcements"
-              element={
-                <Announcements />
-              }
+              element={<Announcements />}
             />
 
             <Route
@@ -494,9 +418,9 @@ function ProtectedApp({
                 <div className="page-container">
                   <section className="content-section">
                     <h1>About</h1>
+
                     <p>
-                      About ClubOps AI
-                      will be added
+                      About ClubOps AI will be added
                       here.
                     </p>
                   </section>
@@ -510,10 +434,10 @@ function ProtectedApp({
                 <div className="page-container">
                   <section className="content-section">
                     <h1>Contact Us</h1>
+
                     <p>
-                      Contact information
-                      will be added
-                      here.
+                      Contact information will be
+                      added here.
                     </p>
                   </section>
                 </div>
@@ -537,17 +461,14 @@ function ProtectedApp({
 }
 
 function App() {
-  const [user, setUser] =
-    useState(null);
+  const [user, setUser] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [loading, setLoading] = useState(true);
 
-  const [toast, setToast] =
-    useState({
-      message: "",
-      type: "success",
-    });
+  const [toast, setToast] = useState({
+    message: "",
+    type: "success",
+  });
 
   const showToast = (
     message,
@@ -568,28 +489,17 @@ function App() {
 
   useEffect(() => {
     const savedUser =
-      localStorage.getItem(
-        "clubops_user"
-      );
+      localStorage.getItem("clubops_user");
 
     const token =
-      localStorage.getItem(
-        "clubops_token"
-      );
+      localStorage.getItem("clubops_token");
 
-    if (
-      savedUser &&
-      token
-    ) {
+    if (savedUser && token) {
       try {
         const parsedUser =
-          JSON.parse(
-            savedUser
-          );
+          JSON.parse(savedUser);
 
-        setUser(
-          parsedUser
-        );
+        setUser(parsedUser);
       } catch {
         localStorage.removeItem(
           "clubops_user"
@@ -607,9 +517,7 @@ function App() {
   const handleLogin = (
     loggedInUser
   ) => {
-    setUser(
-      loggedInUser
-    );
+    setUser(loggedInUser);
   };
 
   const handleLogout = () => {
@@ -620,22 +528,14 @@ function App() {
     return (
       <div
         style={{
-          minHeight:
-            "100vh",
-          display:
-            "flex",
-          alignItems:
-            "center",
-          justifyContent:
-            "center",
-          background:
-            "#f5f3ec",
-          color:
-            "#285f50",
-          fontSize:
-            "16px",
-          fontWeight:
-            "600",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f5f3ec",
+          color: "#285f50",
+          fontSize: "16px",
+          fontWeight: "600",
         }}
       >
         Loading ClubOps AI...

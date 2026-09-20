@@ -56,6 +56,31 @@ function Tasks({ showToast }) {
   const canManageTasks =
     canCreateTask || canEditTask;
 
+  /* =========================================================
+     THEME STYLES
+     ========================================================= */
+
+  const mintSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
+
+  const sectionHeadingStyle = {
+    color: "#173f35",
+  };
+
+  const inputStyle = {
+    background: "rgba(255, 255, 255, 0.82)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.20)",
+    borderRadius: "12px",
+  };
 
   /* =========================================================
      LOAD TASKS AND EVENTS
@@ -89,11 +114,9 @@ function Tasks({ showToast }) {
     }
   };
 
-
   useEffect(() => {
     loadData();
   }, []);
-
 
   /* =========================================================
      FORM CHANGE
@@ -107,7 +130,6 @@ function Tasks({ showToast }) {
       [name]: value,
     }));
   };
-
 
   /* =========================================================
      RESET FORM
@@ -125,7 +147,6 @@ function Tasks({ showToast }) {
 
     setEditingId(null);
   };
-
 
   /* =========================================================
      CREATE / UPDATE TASK
@@ -237,7 +258,6 @@ function Tasks({ showToast }) {
     }
   };
 
-
   /* =========================================================
      EDIT TASK
      ========================================================= */
@@ -284,7 +304,6 @@ function Tasks({ showToast }) {
       behavior: "smooth",
     });
   };
-
 
   /* =========================================================
      DELETE TASK
@@ -337,7 +356,6 @@ function Tasks({ showToast }) {
     }
   };
 
-
   /* =========================================================
      GET EVENT TITLE
      ========================================================= */
@@ -360,7 +378,6 @@ function Tasks({ showToast }) {
       ? matchingEvent.title
       : "Unknown event";
   };
-
 
   /* =========================================================
      UI
@@ -390,7 +407,6 @@ function Tasks({ showToast }) {
 
       </header>
 
-
       {/* =====================================================
           ERROR
       ===================================================== */}
@@ -401,15 +417,19 @@ function Tasks({ showToast }) {
         </div>
       )}
 
-
       {/* =====================================================
           CREATE / EDIT FORM
       ===================================================== */}
 
       {canManageTasks && (
-        <section className="event-form-section">
+        <section
+          className="event-form-section"
+          style={mintSectionStyle}
+        >
 
-          <h2>
+          <h2
+            style={sectionHeadingStyle}
+          >
             {editingId
               ? "Edit Task"
               : "Create Task"}
@@ -431,10 +451,10 @@ function Tasks({ showToast }) {
                 onChange={handleChange}
                 placeholder="Enter task title"
                 required
+                style={inputStyle}
               />
 
             </div>
-
 
             <div className="form-group">
 
@@ -449,10 +469,10 @@ function Tasks({ showToast }) {
                 onChange={handleChange}
                 placeholder="Enter task description"
                 rows="4"
+                style={inputStyle}
               />
 
             </div>
-
 
             <div className="form-row">
 
@@ -468,6 +488,7 @@ function Tasks({ showToast }) {
                   value={form.event}
                   onChange={handleChange}
                   required
+                  style={inputStyle}
                 >
 
                   <option value="">
@@ -487,7 +508,6 @@ function Tasks({ showToast }) {
 
               </div>
 
-
               <div className="form-group">
 
                 <label htmlFor="priority">
@@ -499,6 +519,7 @@ function Tasks({ showToast }) {
                   name="priority"
                   value={form.priority}
                   onChange={handleChange}
+                  style={inputStyle}
                 >
 
                   <option value="low">
@@ -519,7 +540,6 @@ function Tasks({ showToast }) {
 
             </div>
 
-
             <div className="form-row">
 
               <div className="form-group">
@@ -533,6 +553,7 @@ function Tasks({ showToast }) {
                   name="status"
                   value={form.status}
                   onChange={handleChange}
+                  style={inputStyle}
                 >
 
                   <option value="todo">
@@ -551,7 +572,6 @@ function Tasks({ showToast }) {
 
               </div>
 
-
               <div className="form-group">
 
                 <label htmlFor="dueDate">
@@ -565,12 +585,12 @@ function Tasks({ showToast }) {
                   value={form.dueDate}
                   onChange={handleChange}
                   required
+                  style={inputStyle}
                 />
 
               </div>
 
             </div>
-
 
             <div className="form-actions">
 
@@ -579,7 +599,6 @@ function Tasks({ showToast }) {
                   ? "Update Task"
                   : "Create Task"}
               </button>
-
 
               {editingId && (
                 <button
@@ -597,7 +616,6 @@ function Tasks({ showToast }) {
         </section>
       )}
 
-
       {/* =====================================================
           VIEW ONLY
       ===================================================== */}
@@ -609,12 +627,14 @@ function Tasks({ showToast }) {
         </div>
       )}
 
-
       {/* =====================================================
           TASK LIST
       ===================================================== */}
 
-      <section className="events-section">
+      <section
+        className="events-section"
+        style={mintSectionStyle}
+      >
 
         <div className="section-heading">
 
@@ -631,16 +651,20 @@ function Tasks({ showToast }) {
 
         </div>
 
-
         {loading ? (
+
           <p>
             Loading tasks...
           </p>
+
         ) : tasks.length === 0 ? (
+
           <p>
             No tasks found.
           </p>
+
         ) : (
+
           <div className="events-list">
 
             {tasks.map((task) => (
@@ -656,12 +680,10 @@ function Tasks({ showToast }) {
                     {task.title}
                   </h3>
 
-
                   <p>
                     {task.description ||
                       "No description provided."}
                   </p>
-
 
                   <div className="event-details">
 
@@ -693,7 +715,6 @@ function Tasks({ showToast }) {
 
                 </div>
 
-
                 {(canEditTask ||
                   canDeleteTask) && (
 
@@ -709,7 +730,6 @@ function Tasks({ showToast }) {
                         Edit
                       </button>
                     )}
-
 
                     {canDeleteTask && (
                       <button
@@ -733,6 +753,7 @@ function Tasks({ showToast }) {
             ))}
 
           </div>
+
         )}
 
       </section>

@@ -29,20 +29,24 @@ function Meetings() {
 
   const [editingId, setEditingId] = useState(null);
 
-  // Get logged-in user's role
+  /* =========================================================
+     USER / PERMISSIONS
+     ========================================================= */
+
   const savedUser = localStorage.getItem("clubops_user");
 
   let user = null;
 
   try {
-    user = savedUser ? JSON.parse(savedUser) : null;
+    user = savedUser
+      ? JSON.parse(savedUser)
+      : null;
   } catch {
     user = null;
   }
 
   const userRole = user?.role;
 
-  // Role permissions
   const canCreateMeeting = canPerformAction(
     userRole,
     "createMeeting"
@@ -61,6 +65,36 @@ function Meetings() {
   const canManageMeetings =
     canCreateMeeting || canEditMeeting;
 
+  /* =========================================================
+     THEME STYLES
+     ========================================================= */
+
+  const mintSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
+
+  const inputStyle = {
+    background: "rgba(255, 255, 255, 0.82)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.20)",
+    borderRadius: "12px",
+  };
+
+  const headingStyle = {
+    color: "#173f35",
+  };
+
+  /* =========================================================
+     LOAD MEETINGS
+     ========================================================= */
+
   const loadMeetings = async () => {
     try {
       setLoading(true);
@@ -75,6 +109,10 @@ function Meetings() {
       setLoading(false);
     }
   };
+
+  /* =========================================================
+     LOAD EVENTS
+     ========================================================= */
 
   const loadEvents = async () => {
     try {
@@ -91,6 +129,10 @@ function Meetings() {
     loadEvents();
   }, []);
 
+  /* =========================================================
+     FORM CHANGE
+     ========================================================= */
+
   const handleChange = (event) => {
     const { name, value } = event.target;
 
@@ -99,6 +141,10 @@ function Meetings() {
       [name]: value,
     }));
   };
+
+  /* =========================================================
+     RESET FORM
+     ========================================================= */
 
   const resetForm = () => {
     setForm({
@@ -115,6 +161,10 @@ function Meetings() {
     setEditingId(null);
   };
 
+  /* =========================================================
+     CREATE / UPDATE MEETING
+     ========================================================= */
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -122,6 +172,7 @@ function Meetings() {
       setError(
         "You do not have permission to edit meetings."
       );
+
       return;
     }
 
@@ -129,6 +180,7 @@ function Meetings() {
       setError(
         "You do not have permission to create meetings."
       );
+
       return;
     }
 
@@ -137,18 +189,26 @@ function Meetings() {
       setSuccess("");
 
       if (!form.date) {
-        setError("Please select a date and time.");
+        setError(
+          "Please select a date and time."
+        );
+
         return;
       }
 
       const meetingData = {
         title: form.title,
-        eventId: form.eventId || undefined,
-        date: new Date(form.date).toISOString(),
+        eventId:
+          form.eventId || undefined,
+        date: new Date(
+          form.date
+        ).toISOString(),
         location: form.location,
         attendees: form.attendees
           .split(",")
-          .map((attendee) => attendee.trim())
+          .map((attendee) =>
+            attendee.trim()
+          )
           .filter(Boolean),
         notes: form.notes,
         transcript: form.transcript,
@@ -165,7 +225,9 @@ function Meetings() {
           "Meeting updated successfully."
         );
       } else {
-        await createMeeting(meetingData);
+        await createMeeting(
+          meetingData
+        );
 
         setSuccess(
           "Meeting created successfully."
@@ -173,17 +235,23 @@ function Meetings() {
       }
 
       resetForm();
+
       await loadMeetings();
     } catch (err) {
       setError(err.message);
     }
   };
 
+  /* =========================================================
+     EDIT MEETING
+     ========================================================= */
+
   const handleEdit = (meeting) => {
     if (!canEditMeeting) {
       setError(
         "You do not have permission to edit meetings."
       );
+
       return;
     }
 
@@ -197,13 +265,18 @@ function Meetings() {
             .toISOString()
             .slice(0, 16)
         : "",
-      location: meeting.location || "",
-      attendees: Array.isArray(meeting.attendees)
+      location:
+        meeting.location || "",
+      attendees: Array.isArray(
+        meeting.attendees
+      )
         ? meeting.attendees.join(", ")
         : "",
       notes: meeting.notes || "",
-      transcript: meeting.transcript || "",
-      status: meeting.status || "Scheduled",
+      transcript:
+        meeting.transcript || "",
+      status:
+        meeting.status || "Scheduled",
     });
 
     setSuccess("");
@@ -215,11 +288,18 @@ function Meetings() {
     });
   };
 
-  const handleDelete = async (meetingId) => {
+  /* =========================================================
+     DELETE MEETING
+     ========================================================= */
+
+  const handleDelete = async (
+    meetingId
+  ) => {
     if (!canDeleteMeeting) {
       setError(
         "You do not have permission to delete meetings."
       );
+
       return;
     }
 
@@ -247,6 +327,10 @@ function Meetings() {
     }
   };
 
+  /* =========================================================
+     GET EVENT NAME
+     ========================================================= */
+
   const getEventName = (eventId) => {
     if (!eventId) {
       return "No event assigned";
@@ -261,19 +345,34 @@ function Meetings() {
       : "Event not found";
   };
 
+  /* =========================================================
+     UI
+     ========================================================= */
+
   return (
     <div className="meetings-page">
-      <header className="page-header">
-        <div>
-          <p className="eyebrow">ClubOps AI</p>
 
-          <h1>Meetings</h1>
+      <header className="page-header">
+
+        <div>
+
+          <p className="eyebrow">
+            ClubOps AI
+          </p>
+
+          <h1>
+            Meetings
+          </h1>
 
           <p>
             Schedule and manage club meetings.
           </p>
+
         </div>
+
       </header>
+
+      {/* ERROR */}
 
       {error && (
         <div className="error-message">
@@ -281,23 +380,36 @@ function Meetings() {
         </div>
       )}
 
+      {/* SUCCESS */}
+
       {success && (
         <div className="success-message">
           {success}
         </div>
       )}
 
-      {/* Create / Edit form */}
+      {/* =====================================================
+          CREATE / EDIT MEETING
+      ===================================================== */}
+
       {canManageMeetings && (
-        <section className="event-form-section">
-          <h2>
+        <section
+          className="event-form-section"
+          style={mintSectionStyle}
+        >
+
+          <h2 style={headingStyle}>
             {editingId
               ? "Edit Meeting"
               : "Create Meeting"}
           </h2>
 
           <form onSubmit={handleSubmit}>
+
+            {/* TITLE */}
+
             <div className="form-group">
+
               <label htmlFor="title">
                 Meeting Title
               </label>
@@ -310,11 +422,17 @@ function Meetings() {
                 onChange={handleChange}
                 placeholder="Enter meeting title"
                 required
+                style={inputStyle}
               />
+
             </div>
 
+            {/* EVENT + DATE */}
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="eventId">
                   Event
                 </label>
@@ -324,7 +442,9 @@ function Meetings() {
                   name="eventId"
                   value={form.eventId}
                   onChange={handleChange}
+                  style={inputStyle}
                 >
+
                   <option value="">
                     No event
                   </option>
@@ -337,10 +457,13 @@ function Meetings() {
                       {event.title}
                     </option>
                   ))}
+
                 </select>
+
               </div>
 
               <div className="form-group">
+
                 <label htmlFor="date">
                   Date and Time
                 </label>
@@ -352,12 +475,19 @@ function Meetings() {
                   value={form.date}
                   onChange={handleChange}
                   required
+                  style={inputStyle}
                 />
+
               </div>
+
             </div>
 
+            {/* LOCATION + STATUS */}
+
             <div className="form-row">
+
               <div className="form-group">
+
                 <label htmlFor="location">
                   Location
                 </label>
@@ -369,10 +499,13 @@ function Meetings() {
                   value={form.location}
                   onChange={handleChange}
                   placeholder="Enter meeting location"
+                  style={inputStyle}
                 />
+
               </div>
 
               <div className="form-group">
+
                 <label htmlFor="status">
                   Status
                 </label>
@@ -382,7 +515,9 @@ function Meetings() {
                   name="status"
                   value={form.status}
                   onChange={handleChange}
+                  style={inputStyle}
                 >
+
                   <option value="Scheduled">
                     Scheduled
                   </option>
@@ -394,11 +529,17 @@ function Meetings() {
                   <option value="Cancelled">
                     Cancelled
                   </option>
+
                 </select>
+
               </div>
+
             </div>
 
+            {/* ATTENDEES */}
+
             <div className="form-group">
+
               <label htmlFor="attendees">
                 Attendees
               </label>
@@ -410,10 +551,15 @@ function Meetings() {
                 value={form.attendees}
                 onChange={handleChange}
                 placeholder="Enter names separated by commas"
+                style={inputStyle}
               />
+
             </div>
 
+            {/* NOTES */}
+
             <div className="form-group">
+
               <label htmlFor="notes">
                 Notes
               </label>
@@ -425,10 +571,15 @@ function Meetings() {
                 onChange={handleChange}
                 placeholder="Enter meeting notes"
                 rows="4"
+                style={inputStyle}
               />
+
             </div>
 
+            {/* TRANSCRIPT */}
+
             <div className="form-group">
+
               <label htmlFor="transcript">
                 Transcript
               </label>
@@ -440,10 +591,15 @@ function Meetings() {
                 onChange={handleChange}
                 placeholder="Enter meeting transcript"
                 rows="6"
+                style={inputStyle}
               />
+
             </div>
 
+            {/* BUTTONS */}
+
             <div className="form-actions">
+
               <button type="submit">
                 {editingId
                   ? "Update Meeting"
@@ -458,21 +614,37 @@ function Meetings() {
                   Cancel
                 </button>
               )}
+
             </div>
+
           </form>
+
         </section>
       )}
 
+      {/* VIEW ONLY */}
+
       {!canManageMeetings && (
         <div className="empty-state">
-          You can view meetings, but you do not have
-          permission to create or edit them.
+          You can view meetings, but you do not
+          have permission to create or edit them.
         </div>
       )}
 
-      <section className="events-section">
+      {/* =====================================================
+          ALL MEETINGS
+      ===================================================== */}
+
+      <section
+        className="events-section"
+        style={mintSectionStyle}
+      >
+
         <div className="section-heading">
-          <h2>All Meetings</h2>
+
+          <h2>
+            All Meetings
+          </h2>
 
           <button
             type="button"
@@ -480,23 +652,40 @@ function Meetings() {
           >
             Refresh
           </button>
+
         </div>
 
         {loading ? (
-          <p>Loading meetings...</p>
+
+          <p>
+            Loading meetings...
+          </p>
+
         ) : meetings.length === 0 ? (
-          <p>No meetings found.</p>
+
+          <p>
+            No meetings found.
+          </p>
+
         ) : (
+
           <div className="events-list">
+
             {meetings.map((meeting) => (
+
               <article
                 className="event-card"
                 key={meeting._id}
               >
+
                 <div className="event-card-content">
-                  <h3>{meeting.title}</h3>
+
+                  <h3>
+                    {meeting.title}
+                  </h3>
 
                   <div className="event-details">
+
                     <span>
                       Date:{" "}
                       {meeting.date
@@ -520,40 +709,53 @@ function Meetings() {
                     </span>
 
                     <span>
-                      Status: {meeting.status}
+                      Status:{" "}
+                      {meeting.status}
                     </span>
 
                     <span>
                       Attendees:{" "}
                       {meeting.attendees?.length
-                        ? meeting.attendees.join(", ")
+                        ? meeting.attendees.join(
+                            ", "
+                          )
                         : "None listed"}
                     </span>
+
                   </div>
 
                   {meeting.notes && (
                     <p>
-                      <strong>Notes:</strong>{" "}
+                      <strong>
+                        Notes:
+                      </strong>{" "}
                       {meeting.notes}
                     </p>
                   )}
 
                   {meeting.transcript && (
                     <p>
-                      <strong>Transcript:</strong>{" "}
+                      <strong>
+                        Transcript:
+                      </strong>{" "}
                       {meeting.transcript}
                     </p>
                   )}
+
                 </div>
 
                 {(canEditMeeting ||
                   canDeleteMeeting) && (
+
                   <div className="event-actions">
+
                     {canEditMeeting && (
                       <button
                         type="button"
                         onClick={() =>
-                          handleEdit(meeting)
+                          handleEdit(
+                            meeting
+                          )
                         }
                       >
                         Edit
@@ -572,13 +774,21 @@ function Meetings() {
                         Delete
                       </button>
                     )}
+
                   </div>
+
                 )}
+
               </article>
+
             ))}
+
           </div>
+
         )}
+
       </section>
+
     </div>
   );
 }

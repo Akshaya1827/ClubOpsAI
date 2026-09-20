@@ -72,6 +72,16 @@ export const getEvents = async () => {
   return response.json();
 };
 
+export const getEventById = async (eventId) => {
+  const response = await fetch(`${API_BASE_URL}/events/${eventId}`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch event");
+  }
+
+  return response.json();
+};
+
 export const createEvent = async (eventData) => {
   const response = await fetch(`${API_BASE_URL}/events`, {
     method: "POST",

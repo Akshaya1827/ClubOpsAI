@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   getEvents,
   createEvent,
@@ -8,6 +9,8 @@ import {
 import { canPerformAction } from "../config/permissions";
 
 function Events({ showToast }) {
+  const navigate = useNavigate();
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -51,6 +54,43 @@ function Events({ showToast }) {
   const canManageEvents =
     canCreateEvent || canEditEvent;
 
+  /* =========================================================
+     STYLES
+     ========================================================= */
+
+  const formSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
+
+  const formHeadingStyle = {
+    color: "#173f35",
+    marginBottom: "24px",
+  };
+
+  const inputStyle = {
+    background: "rgba(255, 255, 255, 0.78)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.20)",
+    borderRadius: "12px",
+  };
+
+  const eventListSectionStyle = {
+    background:
+      "linear-gradient(135deg, #f4fffa 0%, #dff3e9 100%)",
+    border:
+      "1px solid rgba(65, 139, 112, 0.16)",
+    borderRadius: "24px",
+    boxShadow:
+      "0 10px 30px rgba(46, 92, 76, 0.08)",
+    padding: "30px",
+  };
 
   /* =========================================================
      LOAD EVENTS
@@ -62,13 +102,15 @@ function Events({ showToast }) {
       setError("");
 
       const data = await getEvents();
+
       setEvents(data.events || []);
     } catch (err) {
       setError(err.message);
 
       if (showToast) {
         showToast(
-          err.message || "Failed to load events.",
+          err.message ||
+            "Failed to load events.",
           "error"
         );
       }
@@ -77,11 +119,9 @@ function Events({ showToast }) {
     }
   };
 
-
   useEffect(() => {
     loadEvents();
   }, []);
-
 
   /* =========================================================
      FORM CHANGE
@@ -95,7 +135,6 @@ function Events({ showToast }) {
       [name]: value,
     }));
   };
-
 
   /* =========================================================
      RESET FORM
@@ -111,7 +150,6 @@ function Events({ showToast }) {
 
     setEditingId(null);
   };
-
 
   /* =========================================================
      CREATE / UPDATE EVENT
@@ -154,7 +192,9 @@ function Events({ showToast }) {
       setError("");
 
       if (!form.date) {
-        setError("Please select a date and time.");
+        setError(
+          "Please select a date and time."
+        );
 
         if (showToast) {
           showToast(
@@ -169,7 +209,9 @@ function Events({ showToast }) {
       const eventData = {
         title: form.title,
         description: form.description,
-        date: new Date(form.date).toISOString(),
+        date: new Date(
+          form.date
+        ).toISOString(),
         location: form.location,
       };
 
@@ -195,19 +237,20 @@ function Events({ showToast }) {
       }
 
       resetForm();
+
       await loadEvents();
     } catch (err) {
       setError(err.message);
 
       if (showToast) {
         showToast(
-          err.message || "Something went wrong.",
+          err.message ||
+            "Something went wrong.",
           "error"
         );
       }
     }
   };
-
 
   /* =========================================================
      EDIT EVENT
@@ -233,13 +276,15 @@ function Events({ showToast }) {
 
     setForm({
       title: event.title || "",
-      description: event.description || "",
+      description:
+        event.description || "",
       date: event.date
         ? new Date(event.date)
             .toISOString()
             .slice(0, 16)
         : "",
-      location: event.location || "",
+      location:
+        event.location || "",
     });
 
     window.scrollTo({
@@ -247,7 +292,6 @@ function Events({ showToast }) {
       behavior: "smooth",
     });
   };
-
 
   /* =========================================================
      DELETE EVENT
@@ -294,13 +338,21 @@ function Events({ showToast }) {
 
       if (showToast) {
         showToast(
-          err.message || "Failed to delete event.",
+          err.message ||
+            "Failed to delete event.",
           "error"
         );
       }
     }
   };
 
+  /* =========================================================
+     VIEW EVENT DETAILS
+     ========================================================= */
+
+  const handleViewDetails = (eventId) => {
+    navigate(`/events/${eventId}`);
+  };
 
   /* =========================================================
      UI
@@ -315,7 +367,9 @@ function Events({ showToast }) {
             ClubOps AI
           </p>
 
-          <h1>Events</h1>
+          <h1>
+            Events
+          </h1>
 
           <p>
             Manage club events and their schedules.
@@ -323,10 +377,7 @@ function Events({ showToast }) {
         </div>
       </header>
 
-
-      {/* =====================================================
-          ERROR MESSAGE
-      ===================================================== */}
+      {/* ERROR */}
 
       {error && (
         <div className="error-message">
@@ -334,15 +385,15 @@ function Events({ showToast }) {
         </div>
       )}
 
-
-      {/* =====================================================
-          CREATE / EDIT FORM
-      ===================================================== */}
+      {/* CREATE / EDIT FORM */}
 
       {canManageEvents && (
-        <section className="event-form-section">
+        <section
+          className="event-form-section"
+          style={formSectionStyle}
+        >
 
-          <h2>
+          <h2 style={formHeadingStyle}>
             {editingId
               ? "Edit Event"
               : "Create Event"}
@@ -364,10 +415,10 @@ function Events({ showToast }) {
                 onChange={handleChange}
                 placeholder="Enter event title"
                 required
+                style={inputStyle}
               />
 
             </div>
-
 
             <div className="form-group">
 
@@ -382,10 +433,10 @@ function Events({ showToast }) {
                 onChange={handleChange}
                 placeholder="Enter event description"
                 rows="4"
+                style={inputStyle}
               />
 
             </div>
-
 
             <div className="form-row">
 
@@ -402,10 +453,10 @@ function Events({ showToast }) {
                   value={form.date}
                   onChange={handleChange}
                   required
+                  style={inputStyle}
                 />
 
               </div>
-
 
               <div className="form-group">
 
@@ -420,12 +471,12 @@ function Events({ showToast }) {
                   value={form.location}
                   onChange={handleChange}
                   placeholder="Enter location"
+                  style={inputStyle}
                 />
 
               </div>
 
             </div>
-
 
             <div className="form-actions">
 
@@ -434,7 +485,6 @@ function Events({ showToast }) {
                   ? "Update Event"
                   : "Create Event"}
               </button>
-
 
               {editingId && (
                 <button
@@ -452,24 +502,21 @@ function Events({ showToast }) {
         </section>
       )}
 
-
-      {/* =====================================================
-          VIEW-ONLY MESSAGE
-      ===================================================== */}
+      {/* VIEW ONLY */}
 
       {!canManageEvents && (
         <div className="empty-state">
-          You can view events, but you do not have
-          permission to create or edit them.
+          You can view events, but you do not
+          have permission to create or edit them.
         </div>
       )}
 
+      {/* EVENTS LIST */}
 
-      {/* =====================================================
-          EVENTS LIST
-      ===================================================== */}
-
-      <section className="events-section">
+      <section
+        className="events-section"
+        style={eventListSectionStyle}
+      >
 
         <div className="section-heading">
 
@@ -486,16 +533,20 @@ function Events({ showToast }) {
 
         </div>
 
-
         {loading ? (
+
           <p>
             Loading events...
           </p>
+
         ) : events.length === 0 ? (
+
           <p>
             No events found.
           </p>
+
         ) : (
+
           <div className="events-list">
 
             {events.map((event) => (
@@ -516,7 +567,6 @@ function Events({ showToast }) {
                       "No description provided."}
                   </p>
 
-
                   <div className="event-details">
 
                     <span>
@@ -533,52 +583,60 @@ function Events({ showToast }) {
                     </span>
 
                     <span>
-                      Status: {event.status}
+                      Status:{" "}
+                      {event.status}
                     </span>
 
                   </div>
 
                 </div>
 
+                <div className="event-actions">
 
-                {(canEditEvent ||
-                  canDeleteEvent) && (
+                  <button
+                    type="button"
+                    className="view-details-button"
+                    onClick={() =>
+                      handleViewDetails(
+                        event._id
+                      )
+                    }
+                  >
+                    View Details
+                  </button>
 
-                  <div className="event-actions">
+                  {canEditEvent && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleEdit(event)
+                      }
+                    >
+                      Edit
+                    </button>
+                  )}
 
-                    {canEditEvent && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleEdit(event)
-                        }
-                      >
-                        Edit
-                      </button>
-                    )}
+                  {canDeleteEvent && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleDelete(
+                          event._id
+                        )
+                      }
+                    >
+                      Delete
+                    </button>
+                  )}
 
-
-                    {canDeleteEvent && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleDelete(
-                            event._id
-                          )
-                        }
-                      >
-                        Delete
-                      </button>
-                    )}
-
-                  </div>
-                )}
+                </div>
 
               </article>
 
             ))}
 
           </div>
+
         )}
 
       </section>
