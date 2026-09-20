@@ -14,26 +14,14 @@ const {
   executeTool,
 } = require("./toolExecutor");
 
-// --------------------------------------------------
-// AI PROVIDER SERVICE
-// --------------------------------------------------
-//
-// This is the single entry point for AI.
-//
-// The rest of ClubOps does:
-//
-// generateAIResponse(prompt, context)
-//
-// It does NOT care whether the provider is:
-// - mock
-// - gemini
-// --------------------------------------------------
+const {
+  executeAction,
+} = require("./actionService");
 
 const generateAIResponse = async (
   prompt,
   context = {}
 ) => {
-
   const provider =
     process.env.AI_PROVIDER || "mock";
 
@@ -50,19 +38,13 @@ const generateAIResponse = async (
     "=================================\n"
   );
 
-  // ------------------------------------------------
-  // MOCK PROVIDER
-  // ------------------------------------------------
-
   if (provider === "mock") {
-
     const aiResult =
       await generateMockResponse(
         prompt,
         context
       );
 
-    // Normal text response
     if (aiResult.type === "text") {
       return {
         type: "text",
@@ -70,9 +52,7 @@ const generateAIResponse = async (
       };
     }
 
-    // Tool call
     if (aiResult.type === "tool_call") {
-
       if (
         !aiResult.tool ||
         !aiResult.tool.name
@@ -126,36 +106,97 @@ const generateAIResponse = async (
 
       return {
         type: "text",
-
         reply: finalResult.reply,
-
         tool: {
           name: toolName,
           args: toolArgs,
         },
       };
     }
+    if (aiResult.type === "action_call") {
+  if (
+    !aiResult.action ||
+    !aiResult.action.name
+  ) {
+    throw new Error(
+      "Mock AI returned an invalid action call"
+    );
+  }
 
+  const actionName =
+    aiResult.action.name;
+
+  const actionArgs =
+    aiResult.action.args || {};
+
+  console.log(
+    "\n========== MOCK ACTION CALL =========="
+  );
+
+  console.log(
+    "Action:",
+    actionName
+  );
+
+  console.log(
+    "Arguments:",
+    JSON.stringify(
+      actionArgs,
+      null,
+      2
+    )
+  );
+
+  console.log(
+    "======================================\n"
+  );
+
+  let actionResult;
+
+try {
+  actionResult =
+    await executeAction(
+      actionName,
+      actionArgs,
+      context
+    );
+} catch (error) {
+  return {
+    type: "text",
+    reply:
+      `I couldn't complete that action: ${error.message}.`,
+    action: {
+      name: actionName,
+      args: actionArgs,
+      error: error.message,
+    },
+  };
+}
+
+  return {
+    type: "text",
+
+    reply:
+      `Task "${actionResult.title}" was created successfully.`,
+
+    action: {
+      name: actionName,
+      args: actionArgs,
+      result: actionResult,
+    },
+  };
+}
     throw new Error(
       `Unsupported Mock AI response type: ${aiResult.type}`
     );
   }
 
-  // ------------------------------------------------
-  // GEMINI PROVIDER
-  // ------------------------------------------------
-
   if (provider === "gemini") {
-
     return await generateGeminiResponse(
       prompt,
       context
     );
   }
-
-  // ------------------------------------------------
-  // UNKNOWN PROVIDER
-  // ------------------------------------------------
 
   throw new Error(
     `Unsupported AI provider: ${provider}`
